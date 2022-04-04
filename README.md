@@ -3,8 +3,7 @@ easier. It adds support for stack traces, multierrors, and simplifies working wi
 The `go-xerrors` package is fully compatible with Go errors 1.13, supporting the `errors.As`, `errors.Is`,
 and `errors.Unwrap` functions.
 
-Main features:
-
+**Main features:**
 - Stack traces
 - Multierrors
 - More flexible error warping
@@ -26,7 +25,7 @@ given message and records the stack trace at the point it was called.
 The simplest use of the `xerrors.New` function is to create a simple string-based error along with a stack trace:
 
 ```go
-err := xerrors.New("access denided")
+err := xerrors.New("access denied")
 ```
 
 However, calling the `Error` method on the returned error will only return the string that was passed to
@@ -43,8 +42,8 @@ Output:
 
 ```
 	at main.TestMain (/home/user/app/main_test.go:10)
-	at testing.tRunner (/home/user/go /src/testing/testing.go:1259)
-	at runtime.goexit (/home/user/go /src/runtime/asm_arm64.s:1133)
+	at testing.tRunner (/home/user/go/src/testing/testing.go:1259)
+	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1133)
 ```
 
 Another way to display a stack trace is to use the `xerrors.Print`, `xerrors.Sprint`, or `xerrors.Fprint` methods. These
@@ -58,10 +57,10 @@ xerrors.Print(err)
 Output:
 
 ```
-Error: access denided
+Error: access denied
 	at main.TestMain (/home/user/app/main_test.go:10)
-	at testing.tRunner (/home/user/go /src/testing/testing.go:1259)
-	at runtime.goexit (/home/user/go /src/runtime/asm_arm64.s:1133)
+	at testing.tRunner (/home/user/go/src/testing/testing.go:1259)
+	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1133)
 ```
 
 ## Error wrapping
@@ -71,7 +70,7 @@ trace to sentinel errors. The `xerrors` package provides the `xerrors.Message` f
 sentinel errors, to add a stack trace to them, they need to be passed to the `xerrors.New` function:
 
 ```jsx
-var ErrAccessDenied = xerrors.Message("access denided")
+var ErrAccessDenied = xerrors.Message("access denied")
 // ...
 err := xerrors.New(ErrAccessDenied)
 ```
@@ -80,17 +79,17 @@ Another way to use the `xerrors.New` function is to wrap errors:
 
 ```jsx
 err := xerrors.New("unable to open resource", ErrAccessDenied)
-err.Error() // unable to open resource: access denided
+err.Error() // unable to open resource: access denied
 ```
 
 It is also possible to wrap an error in another error:
 
 ```go
-var ErrAccessDenied = xerrors.Message("access denided")
+var ErrAccessDenied = xerrors.Message("access denied")
 var ErrResourceOpenFailed = xerrors.Message("unable to open resource")
 // ...
 err := xerrors.New(ErrResourceOpenFailed, ErrAccessDenied)
-err.Error() // unable to open resource: access denided
+err.Error() // unable to open resource: access denied
 errors.Is(err, ErrResourceOpenFailed) // true
 errors.Is(err, ErrAccessDenied) // true
 ```
@@ -133,12 +132,12 @@ error message is much easier to read:
 Error: the following errors occurred: [username cannot be empty, password is too short]
 1. Error: username cannot be empty
 	at xerrors.TestFprint (/home/user/app/main_test.go:10)
-	at testing.tRunner (/home/user/go /src/testing/testing.go:1439)
-	at runtime.goexit (/home/user/go /src/runtime/asm_arm64.s:1259)
+	at testing.tRunner (/home/user/go/src/testing/testing.go:1439)
+	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1259)
 2. Error: password is too short
 	at xerrors.TestFprint (/home/user/app/main_test.go:13)
-	at testing.tRunner (/home/user/go /src/testing/testing.go:1439)
-	at runtime.goexit (/home/user/go /src/runtime/asm_arm64.s:1259)
+	at testing.tRunner (/home/user/go/src/testing/testing.go:1439)
+	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1259)
 ```
 
 Finally, multierror implements the `xerrors.MultiError` interface, which provides the `Errors` method that returns a
