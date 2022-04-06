@@ -1,3 +1,5 @@
+# go-xerrors
+
 `go-xerrors` is an idiomatic and lightweight package that provides a set of functions to make working with errors
 easier. It adds support for stack traces, multierrors, and simplifies working with wrapped errors and panics.
 The `go-xerrors` package is fully compatible with Go errors 1.13, supporting the `errors.As`, `errors.Is`,
@@ -11,13 +13,13 @@ and `errors.Unwrap` functions.
 
 ---
 
-# Installation
+## Installation
 
 `go get -u github.com/mdobak/go-xerrors`
 
-# Usage
+## Usage
 
-## Basic errors and stack traces
+### Basic errors and stack traces
 
 The most important function in the package is the `xerrors.New` function. This function creates a new error based on the
 given message and records the stack trace at the point it was called.
@@ -63,7 +65,7 @@ Error: access denied
 	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1133)
 ```
 
-## Error wrapping
+### Error wrapping
 
 The `xerrors.New` function accepts not only strings but also other errors. For example, it can be used to add a stack
 trace to sentinel errors. The `xerrors` package provides the `xerrors.Message` function, that creates string-based
@@ -97,7 +99,7 @@ errors.Is(err, ErrAccessDenied) // true
 Unlike the standard `fmt.Errorf` function, `xerrors.New` keeps references to both errors so that no information is lost
 during wrapping.
 
-## Multierrors
+### Multierrors
 
 Multierrors allow storing a list of errors in a single error, allowing multiple errors to be returned from a function.
 It supports the `errors.Is` and `errors.As` methods. However, the `errors.Unwrap` method is not supported.
@@ -143,7 +145,7 @@ Error: the following errors occurred: [username cannot be empty, password is too
 Finally, multierror implements the `xerrors.MultiError` interface, which provides the `Errors` method that returns a
 list of errors.
 
-## Recovered panics
+### Recovered panics
 
 In Go, the values returned by the `recover` built-in do not implement the `error` interface, which can be inconvenient.
 For this reason, the package provides two functions to convert recovered panics to errors.
@@ -169,13 +171,13 @@ defer func () {
 }()
 ```
 
-## Documentation
+### Documentation
 
 This package offers a few additional functions and interfaces that may be useful in some use cases. More information
 about them can be found in the documentation:
 
 [https://pkg.go.dev/github.com/mdobak/go-xerrors](https://pkg.go.dev/github.com/mdobak/go-xerrors)
 
-## License
+### License
 
 Licensed under MIT License
