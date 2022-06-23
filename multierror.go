@@ -21,15 +21,20 @@ func Append(err error, errs ...error) error {
 	if err == nil && len(errs) == 0 {
 		return nil
 	}
-	switch e := err.(type) {
+	switch errTyp := err.(type) {
 	case multiError:
-		return append(e, errs...)
+		return append(errTyp, errs...)
 	default:
-		var m multiError
+		var me multiError
 		if err != nil {
-			m = multiError{err}
+			me = multiError{err}
 		}
-		return append(m, errs...)
+		for _, e := range errs {
+			if e != nil {
+				me = append(me, e)
+			}
+		}
+		return me
 	}
 }
 

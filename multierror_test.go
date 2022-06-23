@@ -14,6 +14,7 @@ func TestAppend(t *testing.T) {
 		want string
 	}{
 		{err: nil, errs: []error{Message("a"), Message("b")}, want: "the following errors occurred: [a, b]"},
+		{err: nil, errs: []error{nil, Message("a")}, want: "the following errors occurred: [a]"},
 		{err: Message("a"), errs: []error{Message("b"), Message("c")}, want: "the following errors occurred: [a, b, c]"},
 		{err: Message("a"), errs: nil, want: "the following errors occurred: [a]"},
 		{err: multiError{}, errs: nil, want: "the following errors occurred: []"},
@@ -42,6 +43,9 @@ func TestAppend(t *testing.T) {
 					t.Errorf("errors.As(Append(err, errs...), err): must return false for a different error type")
 				}
 				for _, err := range tt.errs {
+					if err == nil {
+						continue
+					}
 					if !errors.Is(got, err) {
 						t.Errorf("errors.Is(Append(err, errs...), errs[n]): must return true for all errors")
 					}
