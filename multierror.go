@@ -34,6 +34,9 @@ func Append(err error, errs ...error) error {
 				me = append(me, e)
 			}
 		}
+		if len(me) == 0 {
+			return nil
+		}
 		return me
 	}
 }

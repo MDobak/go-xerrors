@@ -9,9 +9,10 @@ import (
 
 func TestAppend(t *testing.T) {
 	tests := []struct {
-		err  error
-		errs []error
-		want string
+		err     error
+		errs    []error
+		want    string
+		wantNil bool
 	}{
 		{err: nil, errs: []error{Message("a"), Message("b")}, want: "the following errors occurred: [a, b]"},
 		{err: nil, errs: []error{nil, Message("a")}, want: "the following errors occurred: [a]"},
@@ -20,12 +21,13 @@ func TestAppend(t *testing.T) {
 		{err: multiError{}, errs: nil, want: "the following errors occurred: []"},
 		{err: multiError{Message("a")}, errs: nil, want: "the following errors occurred: [a]"},
 		{err: multiError{Message("a")}, errs: []error{Message("b")}, want: "the following errors occurred: [a, b]"},
-		{err: nil, errs: nil},
+		{err: nil, errs: nil, wantNil: true},
+		{err: nil, errs: []error{nil, nil}, wantNil: true},
 	}
 	for n, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", n+1), func(t *testing.T) {
 			got := Append(tt.err, tt.errs...)
-			if tt.err == nil && len(tt.errs) == 0 {
+			if tt.wantNil {
 				if got != nil {
 					t.Errorf("Append(nil): must return nil")
 				}
