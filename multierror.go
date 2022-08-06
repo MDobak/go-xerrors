@@ -7,14 +7,15 @@ import (
 )
 
 // Append adds more errors to an existing list of errors. If err is not a list
-// of errors, then it will be converted into a list. It does not record
-// a stack trace.
+// of errors, then it will be converted into a list. Nil errors are ignored.
+// It does not record a stack trace.
+//
+// If the list is empty, nil is returned. If the list contains only one error,
+// that error is returned instead of list.
 //
 // The returned list of errors is compatible with Go 1.13 errors, and it
 // supports the errors.Is and errors.As methods. However, the errors.Unwrap
 // method is not supported.
-//
-// If err is nil and no additional errors are given, nil is returned.
 //
 // Append is not thread-safe.
 func Append(err error, errs ...error) error {
@@ -23,7 +24,12 @@ func Append(err error, errs ...error) error {
 	}
 	switch errTyp := err.(type) {
 	case multiError:
-		return append(errTyp, errs...)
+		for _, e := range errs {
+			if e != nil {
+				errTyp = append(errTyp, e)
+			}
+		}
+		return errTyp
 	default:
 		var me multiError
 		if err != nil {
@@ -33,6 +39,9 @@ func Append(err error, errs ...error) error {
 			if e != nil {
 				me = append(me, e)
 			}
+		}
+		if len(me) == 1 {
+			return me[0]
 		}
 		if len(me) == 0 {
 			return nil

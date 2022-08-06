@@ -15,12 +15,12 @@ func TestAppend(t *testing.T) {
 		wantNil bool
 	}{
 		{err: nil, errs: []error{Message("a"), Message("b")}, want: "the following errors occurred: [a, b]"},
-		{err: nil, errs: []error{nil, Message("a")}, want: "the following errors occurred: [a]"},
+		{err: nil, errs: []error{nil, Message("a")}, want: "a"},
 		{err: Message("a"), errs: []error{Message("b"), Message("c")}, want: "the following errors occurred: [a, b, c]"},
-		{err: Message("a"), errs: nil, want: "the following errors occurred: [a]"},
-		{err: multiError{}, errs: nil, want: "the following errors occurred: []"},
-		{err: multiError{Message("a")}, errs: nil, want: "the following errors occurred: [a]"},
-		{err: multiError{Message("a")}, errs: []error{Message("b")}, want: "the following errors occurred: [a, b]"},
+		{err: Message("a"), errs: nil, want: "a"},
+		{err: multiError{Message("a"), Message("b")}, errs: nil, want: "the following errors occurred: [a, b]"},
+		{err: multiError{Message("a"), Message("b")}, errs: []error{Message("c")}, want: "the following errors occurred: [a, b, c]"},
+		{err: multiError{}, errs: []error{Message("a"), nil}, want: "the following errors occurred: [a]"},
 		{err: nil, errs: nil, wantNil: true},
 		{err: nil, errs: []error{nil, nil}, wantNil: true},
 	}
@@ -55,25 +55,6 @@ func TestAppend(t *testing.T) {
 						t.Errorf("errors.As(Append(err, errs...), errs[n]): must return true for all errors")
 					}
 				}
-			}
-		})
-	}
-}
-
-func TestMultiError_Error(t *testing.T) {
-	tests := []struct {
-		errs []error
-		want string
-	}{
-		{errs: []error{}, want: `the following errors occurred: []`},
-		{errs: []error{Message("a"), Message("b")}, want: `the following errors occurred: [a, b]`},
-		{errs: []error{New("a"), New("b")}, want: `the following errors occurred: [a, b]`},
-	}
-	for n, tt := range tests {
-		t.Run(fmt.Sprintf("case-%d", n+1), func(t *testing.T) {
-			err := multiError(tt.errs)
-			if got := err.Error(); got != tt.want {
-				t.Errorf("multiError(errs).Error(): got: %q, want: %q", got, tt.want)
 			}
 		})
 	}
