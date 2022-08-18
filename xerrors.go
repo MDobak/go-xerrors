@@ -16,6 +16,7 @@ type StackTracer interface {
 	StackTrace() Callers
 }
 
+// MultiError is an error that contains multiple errors.
 type MultiError interface {
 	error
 	Errors() []error
@@ -23,13 +24,13 @@ type MultiError interface {
 
 // DetailedError provides extended information about an error.
 // The ErrorDetails method returns a longer, multi-line description of
-// the error. It must always end with a new line.
+// the error. It always ends with a new line.
 type DetailedError interface {
 	error
 	ErrorDetails() string
 }
 
-// messageError is the simplest possible error which contains only
+// messageError is the simplest possible error that contains only
 // a string message.
 type messageError struct {
 	msg string
@@ -43,6 +44,9 @@ func (e *messageError) Error() string {
 // Message creates a simple error with the given message. It does not record
 // a stack trace. Each call returns a distinct error value even if the
 // message is identical.
+//
+// This function is intended to create sentinel errors, sometimes referred
+// to as "constant errors".
 func Message(msg string) error {
 	return &messageError{msg: msg}
 }
@@ -51,6 +55,18 @@ func Message(msg string) error {
 // the point it was called. If multiple values are provided, then each error
 // is wrapped by the previous error. Calling New(a, b, c), where a, b, and c
 // are errors, is equivalent to calling New(WithWrapper(WithWrapper(a, b), c)).
+//
+// This function may be used to:
+//
+// - Add a stack trace to an error: New(err)
+//
+// - Create a message error with a stack trace: New("access denied")
+//
+// - Wrap an error with a message: New("access denied", io.EOF)
+//
+// - Wrap one error in another: New(ErrAccessDenied, io.EOF)
+//
+// - Add a message to a sentinel error: New(ErrReadError, "access denied")
 //
 // Values are converted to errors according to the following rules:
 //
@@ -64,19 +80,8 @@ func Message(msg string) error {
 // - If a value implements the fmt.Stringer interface, then a String() method
 // will be used to create an error.
 //
-// - For other types the result of fmt.Sprint will be used to create an error.
-//
-// This function may be used to:
-//
-// - Add a stack trace to an error: New(err)
-//
-// - Create a message error with a stack trace: New("access denied")
-//
-// - Wrap an error with a message: New("access denied", io.EOF)
-//
-// - Wrap one error in another: New(ErrAccessDenied, io.EOF)
-//
-// - Add a message to a sentinel error: New(ErrReadError, "access denied")
+// - For other types the result of fmt.Sprint will be used to create a message
+// error.
 //
 // It is possible to use errors.Is function on returned error to check whether
 // an error has been used in the New function.

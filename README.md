@@ -21,7 +21,7 @@ and `errors.Unwrap` functions.
 
 ### Basic errors and stack traces
 
-The most important function in the package is the `xerrors.New` function. This function creates a new error based on the
+The most useful function in the package is the `xerrors.New` function. This function creates a new error based on the
 given message and records the stack trace at the point it was called.
 
 The simplest use of the `xerrors.New` function is to create a simple string-based error along with a stack trace:
@@ -31,7 +31,7 @@ err := xerrors.New("access denied")
 ```
 
 However, calling the `Error` method on the returned error will only return the string that was passed to
-the `xerrors.New` function. To retrieve the stack trace, the `xerrors.StackTrace` function can be used. This method will
+the `xerrors.New` function. To retrieve a stack trace, the `xerrors.StackTrace` function may be used. This method will
 return an `xerrors.Callers` object, which can be represented as a string using the `fmt` package or by using
 the `String` method.
 
@@ -110,10 +110,10 @@ the Go language:
 ```go
 var err error
 if len(unsername) == 0 {
-	err = xerrors.Append(err, xerrors.New("username cannot be empty")
+	err = xerrors.Append(err, xerrors.New("username cannot be empty"))
 }
 if len(password) < 8 {
-	err = xerrors.Append(err, xerrors.New("password is too short")
+	err = xerrors.Append(err, xerrors.New("password is too short"))
 }
 ```
 
@@ -124,7 +124,7 @@ errors as a long, one-line string:
 the following errors occurred: [username cannot be empty, password is too short]
 ```
 
-Most messages returned by the `Error` method are one-line strings; the `xerrors` package follows this convention.
+Most messages returned by the `Error` method are one-line strings, the `xerrors` package follows this convention.
 
 Another way is to use one of the following functions: `xerrors.Print`, `xerrors.Sprint`, or `xerrors.Fprint`. The
 advantage of using these functions is that they will also display additional details, such as stack traces, and the
@@ -147,7 +147,7 @@ list of errors.
 
 ### Recovered panics
 
-In Go, the values returned by the `recover` built-in do not implement the `error` interface, which can be inconvenient.
+In Go, the values returned by the `recover` built-in do not implement the `error` interface, which may be inconvenient.
 For this reason, the package provides two functions to convert recovered panics to errors.
 
 The first function, `xerrors.Recover`, works similarly to the `recover` built-in. This function must always be called

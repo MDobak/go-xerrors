@@ -84,7 +84,6 @@ func format(s fmt.State, verb rune, v interface{}) {
 	f := []rune{'%'}
 	for _, c := range []int{'-', '+', '#', ' ', '0'} {
 		if s.Flag(c) {
-
 			f = append(f, rune(c))
 		}
 	}

@@ -83,6 +83,15 @@ func (f Frame) String() string {
 }
 
 // Format implements the fmt.Formatter interface.
+//
+// The verbs:
+//
+// 	%s	function, file and line number in a single line
+// 	%f	filename
+// 	%d	line number
+// 	%n	function name, the plus flag adds a package name
+// 	%v	same as %s, the plus or hash flags print struct details
+// 	%q	a double-quoted Go string with same contents as %s
 func (f Frame) Format(s fmt.State, verb rune) {
 	type _Frame Frame
 	switch verb {
@@ -154,6 +163,12 @@ func (c Callers) String() string {
 }
 
 // Format implements the fmt.Formatter interface.
+//
+// The verbs:
+//
+// 	%s	a stack trace
+// 	%v	same as %s, the plus or hash flags print struct details
+// 	%q	a double-quoted Go string with same contents as %s
 func (c Callers) Format(s fmt.State, verb rune) {
 	type _Callers Callers
 	switch verb {
