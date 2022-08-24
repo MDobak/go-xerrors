@@ -1,3 +1,3 @@
 module github.com/mdobak/go-xerrors
 
-go 1.17
+go 1.13

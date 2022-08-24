@@ -84,9 +84,7 @@ func (e multiError) ErrorDetails() string {
 // Errors implements the MultiError interface.
 func (e multiError) Errors() []error {
 	s := make([]error, len(e))
-	for i, err := range e {
-		s[i] = err
-	}
+	copy(s, e)
 	return s
 }
 
