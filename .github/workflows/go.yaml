@@ -1,0 +1,33 @@
+name: Go
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  ci:
+    strategy:
+      matrix:
+        go_version: [ "1.13.x", "1.18.x" ]
+
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+
+      - name: "Set up Go"
+        uses: "actions/setup-go@v3"
+        with:
+          go-version: ${{ matrix.go_version }}
+
+      - name: "Build"
+        run: "go build -v ./..."
+
+      - name: "Test"
+        run: "go test -v ./..."
+
+      - name: "Linter"
+        uses: "golangci/golangci-lint-action@v3"
+        with:
+          version: "v1.48"
