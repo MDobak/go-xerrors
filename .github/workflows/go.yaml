@@ -7,7 +7,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  ci:
+  CI:
     strategy:
       matrix:
         go_version: [ "1.13.x", "1.18.x" ]
@@ -31,3 +31,4 @@ jobs:
         uses: "golangci/golangci-lint-action@v3"
         with:
           version: "v1.48"
+
