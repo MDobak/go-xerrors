@@ -6,6 +6,7 @@ The `go-xerrors` package is fully compatible with Go errors 1.13, supporting the
 and `errors.Unwrap` functions.
 
 **Main features:**
+
 - Stack traces
 - Multierrors
 - More flexible error warping
@@ -21,19 +22,17 @@ and `errors.Unwrap` functions.
 
 ### Basic errors and stack traces
 
-The most useful function in the package is the `xerrors.New` function. This function creates a new error based on the
-given message and records the stack trace at the point it was called.
-
-The simplest use of the `xerrors.New` function is to create a simple string-based error along with a stack trace:
+The most basic usage of `go-xerrors` is to create a new error with a stack trace. This can be done with the
+`xerrors.New` function. The simplest usage is to pass a string, which will be used as the error message.
 
 ```go
-err := xerrors.New("access denied")
+err := xerrors.New("something went wrong")
 ```
 
-However, calling the `Error` method on the returned error will only return the string that was passed to
-the `xerrors.New` function. To retrieve a stack trace, the `xerrors.StackTrace` function may be used. This method will
-return an `xerrors.Callers` object, which can be represented as a string using the `fmt` package or by using
-the `String` method.
+However, calling the `Error` method on this error will only return the error message, not the stack trace. To
+get the stack trace, the `xerrors.StackTrace` function can be used. This function will return an `xerrors.Callers`
+object, which contains the stack trace. The `String` method on this object can be used to get a string representation
+of the stack trace.
 
 ```go
 trace := xerrors.StackTrace(err)
@@ -48,9 +47,10 @@ Output:
 	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1133)
 ```
 
-Another way to display a stack trace is to use the `xerrors.Print`, `xerrors.Sprint`, or `xerrors.Fprint` methods. These
-methods automatically detect whether the specified error contains additional information, such as the stack trace, and
-display it along with the error message:
+Another way to display the stack trace is to use the `xerrors.Print`, `xerrors.Sprint`, or `xerrors.Fprint` functions.
+These functions will detect if the error passed contains a stack trace and print it to the stderr if it does. It is done
+by checking if the error implements the `xerrors.DetailedError` interface. This interface has a single method,
+`ErrorDetails`, that returns an additional information about the error, such as the stack trace.
 
 ```go
 xerrors.Print(err)
@@ -65,69 +65,84 @@ Error: access denied
 	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1133)
 ```
 
+The reason why standard `Error()` method does not return the stack trace is because most developers expect the `Error()`
+method to return only a one-line error message without punctuation at the end. This library follows this convention.
+
+### Sentinel errors
+
+Sentinel errors are errors that are defined as constants. They are useful to check if an error is of a specific type
+without having to compare the error message. This library provides a `xerrors.Message` function that can be used to
+create a sentinel error.
+
+```go
+var ErrAccessDenied = xerrors.Message("access denied")
+// ...
+if errors.Is(err, ErrAccessDenied) {
+    // ...
+}
+```
+
 ### Error wrapping
 
 The `xerrors.New` function accepts not only strings but also other errors. For example, it can be used to add a stack
-trace to sentinel errors. The `xerrors` package provides the `xerrors.Message` function, that creates string-based
-sentinel errors, to add a stack trace to them, they need to be passed to the `xerrors.New` function:
+trace to sentinel errors.
 
-```jsx
+```go
 var ErrAccessDenied = xerrors.Message("access denied")
 // ...
 err := xerrors.New(ErrAccessDenied)
+//
+if errors.Is(err, ErrAccessDenied) {
+    xerrors.Print(err) // prints error along with the stack trace
+}
 ```
 
-Another way to use the `xerrors.New` function is to wrap errors:
+Another way to use the `xerrors.New` function is to wrap an existing error with a new error message.
 
-```jsx
+```go
 err := xerrors.New("unable to open resource", ErrAccessDenied)
-err.Error() // unable to open resource: access denied
+fmt.Print(err.Error()) // unable to open resource: access denied
 ```
 
-It is also possible to wrap an error in another error:
+It is also possible to wrap an error with another error. Unlike the `fmt.Errorf` function, references to both errors 
+will be preserved, so it is possible to check if the new error is one of the wrapped errors.
 
 ```go
 var ErrAccessDenied = xerrors.Message("access denied")
 var ErrResourceOpenFailed = xerrors.Message("unable to open resource")
 // ...
 err := xerrors.New(ErrResourceOpenFailed, ErrAccessDenied)
-err.Error() // unable to open resource: access denied
+fmt.Print(err.Error()) // unable to open resource: access denied
 errors.Is(err, ErrResourceOpenFailed) // true
 errors.Is(err, ErrAccessDenied) // true
 ```
 
-Unlike the standard `fmt.Errorf` function, `xerrors.New` keeps references to both errors so that no information is lost
-during wrapping.
-
 ### Multierrors
 
-Multierrors allow storing a list of errors in a single error, allowing multiple errors to be returned from a function.
-It supports the `errors.Is` and `errors.As` methods. However, the `errors.Unwrap` method is not supported.
-
-To create a new multierror, the function `xerrors.Append` should be used. It works similarly to the append function in
-the Go language:
+Multierrors are a set of errors that can be treated as a single error. The `xerrors` package provides the 
+`xerrors.Append` function to create them. It works similarly to the append function in the Go language. The function 
+accepts a variadic number of errors and returns a new error that contains all of them. The returned error supports 
+`errors.Is` and `errors.As` methods. However, the `errors.Unwrap`method is not supported.
 
 ```go
 var err error
 if len(unsername) == 0 {
-	err = xerrors.Append(err, xerrors.New("username cannot be empty"))
+    err = xerrors.Append(err, xerrors.New("username cannot be empty"))
 }
 if len(password) < 8 {
-	err = xerrors.Append(err, xerrors.New("password is too short"))
+    err = xerrors.Append(err, xerrors.New("password is too short"))
 }
 ```
 
 The error list can be displayed in several ways. The simplest way is to use the `Error` method, which will display
 errors as a long, one-line string:
 
-```go
+```
 the following errors occurred: [username cannot be empty, password is too short]
 ```
 
-Most messages returned by the `Error` method are one-line strings, the `xerrors` package follows this convention.
-
 Another way is to use one of the following functions: `xerrors.Print`, `xerrors.Sprint`, or `xerrors.Fprint`. The
-advantage of using these functions is that they will also display additional details, such as stack traces, and the
+advantage of using these functions is that they will also print additional details, such as stack traces, and the
 error message is much easier to read:
 
 ```
@@ -148,7 +163,7 @@ list of errors.
 ### Recovered panics
 
 In Go, the values returned by the `recover` built-in do not implement the `error` interface, which may be inconvenient.
-For this reason, the package provides two functions to convert recovered panics to errors.
+This library provides two functions to easily convert a recovered value into an error.
 
 The first function, `xerrors.Recover`, works similarly to the `recover` built-in. This function must always be called
 directly using the `defer` keyword. The callback will only be called during a panic, and the provided error will contain
@@ -156,18 +171,18 @@ a stack trace:
 
 ```go
 defer xerrors.Recover(func (err error) {
-	xerrors.Print(err)
+    xerrors.Print(err)
 })
 ```
 
 The second function allows converting a value returned from `recover` built-in to an error with a stack trace:
 
 ```go
-defer func () {
-	if r := recover(); r != nil {
-		err := xerrors.FromRecover(r)
-		xerrors.Print(err)
-	}
+defer func() {
+    if r := recover(); r != nil {
+        err := xerrors.FromRecover(r)
+        xerrors.Print(err)
+    }
 }()
 ```
 

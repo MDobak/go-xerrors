@@ -11,7 +11,7 @@ import (
 
 var errWriter io.Writer = os.Stderr
 
-// Print formats an error and displays it on stderr.
+// Print formats an error and prints it on stderr.
 //
 // If the error implements the DetailedError interface, the result from the
 // ErrorDetails method is used for each wrapped error, otherwise the standard
@@ -33,7 +33,7 @@ func Sprint(err error) string {
 	return s.String()
 }
 
-// Fprint formats an error.
+// Fprint formats an error and writes it to the given writer.
 //
 // If the error implements the DetailedError interface, the result from the
 // ErrorDetails method is used for each wrapped error, otherwise the standard
