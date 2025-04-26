@@ -2,22 +2,20 @@ name: Go
 
 on:
   push:
-    branches: [ "master" ]
   pull_request:
-    branches: [ "master" ]
 
 jobs:
   CI:
     strategy:
       matrix:
-        go_version: [ "1.13.x", "1.18.x" ]
+        go_version: [ "1.13.x", "1.24.x" ]
 
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
 
       - name: "Set up Go"
-        uses: "actions/setup-go@v3"
+        uses: "actions/setup-go@v5"
         with:
           go-version: ${{ matrix.go_version }}
 
@@ -28,7 +26,6 @@ jobs:
         run: "go test -v ./..."
 
       - name: "Linter"
-        uses: "golangci/golangci-lint-action@v3"
+        uses: "golangci/golangci-lint-action@v7"
         with:
-          version: "v1.48"
-
+          version: "v2.0"
