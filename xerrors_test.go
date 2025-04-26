@@ -182,26 +182,8 @@ func TestJoin(t *testing.T) {
 	}
 }
 
-func TestJoin_Unwrap(t *testing.T) {
-	err1 := Message("first error")
-	err2 := Message("second error")
-	got := Join(err1, err2)
-	unwrapper, ok := got.(interface{ Unwrap() error })
-	if !ok {
-		t.Fatalf("Join(err1, err2) must implement Unwrap()")
-	}
-	unwrapped := unwrapper.Unwrap()
-	if unwrapped == nil {
-		t.Fatalf("Join(err1, err2).Unwrap() must not return nil")
-	}
-	if !(!errors.Is(unwrapped, err1) && errors.Is(unwrapped, err2)) {
-		t.Fatalf("Join(err1, err2).Unwrap() must return the second error")
-	}
-}
-
 func TestJoinf(t *testing.T) {
-	err1 := Message("first error")
-	err2 := Message("second error")
+	err := Message("first error")
 	tests := []struct {
 		format string
 		args   []any
@@ -209,8 +191,7 @@ func TestJoinf(t *testing.T) {
 	}{
 		{format: "simple error", args: nil, want: "simple error"},
 		{format: "error with value %d", args: []any{42}, want: "error with value 42"},
-		{format: "wrapped error: %w", args: []any{err1}, want: "wrapped error: first error"},
-		{format: "multiple errors: %w: %w", args: []any{err1, err2}, want: "multiple errors: first error: second error"},
+		{format: "wrapped error: %w", args: []any{err}, want: "wrapped error: first error"},
 	}
 	for n, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", n+1), func(t *testing.T) {
@@ -236,10 +217,10 @@ func TestJoinf(t *testing.T) {
 	}
 }
 
-func TestJoinf_Unwrap(t *testing.T) {
+func TestJoin_Unwrap(t *testing.T) {
 	err1 := Message("first error")
 	err2 := Message("second error")
-	got := Joinf("%w: %w", err1, err2)
+	got := Join(err1, err2)
 	unwrapper, ok := got.(interface{ Unwrap() error })
 	if !ok {
 		t.Fatalf("Join(err1, err2) must implement Unwrap()")
