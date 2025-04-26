@@ -57,7 +57,7 @@ func (e *withStackTrace) ErrorDetails() string {
 	return e.stack.String()
 }
 
-// Unwrap implements the Go 1.13 `Unwrap() []error` method, returning
+// Unwrap implements the Go 1.13 `Unwrap() error` method, returning
 // the wrapped error.
 func (e *withStackTrace) Unwrap() error {
 	return e.err

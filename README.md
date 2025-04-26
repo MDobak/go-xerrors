@@ -1,6 +1,6 @@
 # go-xerrors
 
-`go-xerrors` is an idiomatic and lightweight Go package designed to enhance error handling in Go applications. It provides functions and types that simplify common error handling tasks by adding support for stack traces, combining multiple errors (multi-errors), and offering flexible error wrapping capabilities. The package also includes utilities for streamlined panic handling. `go-xerrors` maintains full compatibility with Go's standard error handling features (Go 1.13+), including `errors.As`, `errors.Is`, and `errors.Unwrap`.
+`go-xerrors` is an idiomatic and lightweight Go package designed to enhance error handling in Go applications. It provides functions and types that simplify common error handling tasks by adding support for stack traces, combining multiple errors, and simplifying working with panics. `go-xerrors` maintains full compatibility with Go's standard error handling features (Go 1.13+), including `errors.As`, `errors.Is`, and `errors.Unwrap`.
 
 **Main Features:**
 
@@ -72,7 +72,7 @@ var ErrAccessDenied = xerrors.Message("access denied")
 
 func performAction() error {
 	// ...
-	return xerrors.New(ErrAccessDenied) // Wrap the sentinel to add a stack trace
+	return ErrAccessDenied
 }
 
 // ...
@@ -80,7 +80,6 @@ func performAction() error {
 err := performAction()
 if errors.Is(err, ErrAccessDenied) {
     log.Println("Operation failed due to access denial.")
-    xerrors.Print(err) // Prints the error with stack trace
 }
 ```
 
@@ -90,19 +89,12 @@ The `xerrors.New` function can wrap existing errors, which is useful for adding 
 
 **Adding Stack Traces to Existing Errors:**
 
-If you receive an error (like a sentinel error) that lacks a stack trace, you can wrap it using `xerrors.New`:
+If you receive an error that lacks a stack trace, you can wrap it using `xerrors.New`:
 
 ```go
-var ErrResourceBusy = xerrors.Message("resource is busy")
-
-// ...
-originalErr := checkResourceStatus() // Returns ErrResourceBusy without stack trace
-if originalErr != nil {
-    // Wrap the original error to capture the stack trace at this point
-    errWithTrace := xerrors.New(originalErr)
-    if errors.Is(errWithTrace, ErrResourceBusy) {
-        xerrors.Print(errWithTrace) // Prints "resource is busy" with stack trace
-    }
+output, err := json.Marshal(data)
+if err != nil {
+	return xerrors.New("failed to marshal data", err)
 }
 ```
 
@@ -112,7 +104,7 @@ Provide a descriptive string as the first argument to `xerrors.New`, followed by
 
 ```go
 if err := updateUserProfile(user); err != nil {
-	return xerrors.New("failed to update user profile", err) // failed to update user profile: <original error>
+	return xerrors.New("failed to update user profile", err)
 }
 ```
 
@@ -124,10 +116,10 @@ if err := updateUserProfile(user); err != nil {
 var ErrConnectionFailed = xerrors.Message("connection failed")
 var ErrTimeout = xerrors.Message("operation timed out")
 
-// Wrap both errors under a single contextual message
-combinedErr := xerrors.New("data retrieval failed", ErrConnectionFailed, ErrTimeout)
+// Wrap both errors under a single error
+combinedErr := xerrors.New(ErrConnectionFailed, ErrTimeout)
 
-fmt.Println(combinedErr.Error()) // data retrieval failed: connection failed: operation timed out
+fmt.Println(combinedErr.Error()) // connection failed: operation timed out
 ```
 
 This feature is useful when a high-level operation fails due to multiple underlying issues that need to be reported together.

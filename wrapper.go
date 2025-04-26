@@ -42,7 +42,7 @@ func (e *withWrapper) Error() string {
 	return s.String()
 }
 
-// Unwrap implements the Go 1.13 `Unwrap() []error` method, returning
+// Unwrap implements the Go 1.13 `Unwrap() error` method, returning
 // the wrapped error.
 func (e *withWrapper) Unwrap() error {
 	return e.err
