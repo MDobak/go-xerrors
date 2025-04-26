@@ -17,7 +17,7 @@
 go get -u github.com/mdobak/go-xerrors
 ```
 
-## Basic Usage
+## Usage
 
 ### Creating Errors with Stack Traces
 
@@ -212,7 +212,7 @@ func handleTask() (err error) {
 
 The returned error implements the `PanicError` interface, which provides access to the original panic value via the `Panic()` method.
 
-## When to use `New`, `Join`, or `Append`
+### When to use `New`, `Join`, or `Append`
 
 While all three functions can be used to aggregate errors, they serve different purposes:
 
@@ -220,9 +220,9 @@ While all three functions can be used to aggregate errors, they serve different 
 - **`xerrors.Join`**: Create chained errors without stack traces, useful for defining sentinel errors
 - **`xerrors.Append`**: Create multi-errors by aggregating independent errors
 
-## Examples
+#### Examples
 
-### Error with Stack Trace
+##### Error with Stack Trace
 
 ```go
 func (m *MyStruct) MarshalJSON() ([]byte, error) {
@@ -235,7 +235,7 @@ func (m *MyStruct) MarshalJSON() ([]byte, error) {
 }
 ```
 
-### Sentinel Errors
+##### Sentinel Errors
 
 ```go
 var (
@@ -263,7 +263,7 @@ func (m *MyStruct) Validate() error {
 }
 ```
 
-### Multi-Error Validation
+##### Multi-Error Validation
 
 ```go
 func (m *MyStruct) Validate() error {
@@ -291,7 +291,6 @@ func (m *MyStruct) Validate() error {
 - `xerrors.Joinf(format string, args ...any) error`: Creates a formatted chained error without a stack trace
 - `xerrors.Message(message string) error`: Creates a simple sentinel error
 - `xerrors.Messagef(format string, args ...any) error`: Creates a simple formatted sentinel error
-- `xerrors.WithStackTrace(err error, skip int) error`: Wraps an error with a stack trace
 
 ### Multi-Error Functions
 
@@ -302,12 +301,16 @@ func (m *MyStruct) Validate() error {
 - `xerrors.Recover(callback func(err error))`: Recovers from panics and invokes a callback with the error
 - `xerrors.FromRecover(recoveredValue any) error`: Converts a recovered value to an error with a stack trace
 
-### Formatting and Stack Trace Functions
+### Formatting Functions
 
 - `xerrors.Print(err error)`: Prints a formatted error to stderr
 - `xerrors.Sprint(err error) string`: Returns a formatted error as a string
 - `xerrors.Fprint(w io.Writer, err error)`: Writes a formatted error to the provided writer
+
+### Stack Trace Functions
+
 - `xerrors.StackTrace(err error) Callers`: Extracts the stack trace from an error
+- `xerrors.WithStackTrace(err error, skip int) error`: Wraps an error with a stack trace
 
 ### Key Interfaces
 
