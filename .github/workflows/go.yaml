@@ -8,7 +8,7 @@ jobs:
   CI:
     strategy:
       matrix:
-        go_version: [ "1.13.x", "1.24.x" ]
+        go_version: [ "1.18.x", "1.24.x" ]
 
     runs-on: "ubuntu-latest"
     steps:
