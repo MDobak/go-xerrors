@@ -10,20 +10,22 @@ import (
 
 const stackTraceDepth = 32
 
-// StackTrace extracts the stack trace from the given error or the
-// first wrapped error that implements [stackTracer].
+// StackTrace extracts the stack trace from the provided error.
+// It traverses the error chain, looking for the last error that
+// has a stack trace.
 func StackTrace(err error) Callers {
+	var callers Callers
 	for err != nil {
-		if e, ok := err.(stackTracer); ok {
-			return e.StackTrace()
+		if e, ok := err.(interface{ StackTrace() Callers }); ok {
+			callers = e.StackTrace()
 		}
-		if e, ok := err.(unwrapper); ok {
+		if e, ok := err.(interface{ Unwrap() error }); ok {
 			err = e.Unwrap()
 			continue
 		}
 		break
 	}
-	return nil
+	return callers
 }
 
 // WithStackTrace wraps the provided error with a stack trace,
@@ -52,9 +54,13 @@ func (e *withStackTrace) Error() string {
 	return e.err.Error()
 }
 
-// ErrorDetails implements the [ErrorDetails] interface.
-func (e *withStackTrace) ErrorDetails() string {
-	return e.stack.String()
+// DetailedError implements the [DetailedError] interface.
+func (e *withStackTrace) DetailedError() string {
+	s := &strings.Builder{}
+	s.WriteString(e.err.Error())
+	s.WriteString("\n")
+	s.WriteString(e.stack.String())
+	return s.String()
 }
 
 // Unwrap implements the Go 1.13 `Unwrap() error` method, returning
@@ -198,12 +204,6 @@ func (c Callers) writeTrace(w io.Writer) {
 		frame.writeFrame(w)
 		io.WriteString(w, "\n")
 	}
-}
-
-// stackTracer represents an error that provides a stack trace.
-type stackTracer interface {
-	error
-	StackTrace() Callers
 }
 
 // callers captures the current stack trace, skipping the specified

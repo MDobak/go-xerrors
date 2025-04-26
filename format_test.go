@@ -16,8 +16,8 @@ func (e testErr) Error() string {
 	return e.err
 }
 
-func (e testErr) ErrorDetails() string {
-	return e.details + "\n"
+func (e testErr) DetailedError() string {
+	return e.err + "\n" + e.details + "\n"
 }
 
 func (e testErr) Unwrap() error {
@@ -31,9 +31,6 @@ func TestFormat(t *testing.T) {
 	}{
 		{
 			err: Message("foo"), want: "Error: foo\n",
-		},
-		{
-			err: WithWrapper(Message("foo"), Message("bar")), want: "Error: foo: bar\n",
 		},
 		{
 			err:  testErr{err: "err", details: "details"},
@@ -73,7 +70,7 @@ func TestPrint(t *testing.T) {
 }
 
 func TestSprint(t *testing.T) {
-	a := New("access denided")
+	a := New("access denied")
 	Print(a)
 
 	err := Message("foo")

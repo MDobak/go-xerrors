@@ -3,5 +3,6 @@
 // that simplify common error handling tasks by adding support for stack
 // traces, combining multiple errors, and simplifying working with panics.
 // The package maintains full compatibility with Go's standard error handling
-// features (Go 1.13+), including errors.As, errors.Is, and errors.Unwrap.
+// features (including changes in Go 1.13 and 1.20), such as errors.As,
+// errors.Is, and errors.Unwrap.
 package xerrors

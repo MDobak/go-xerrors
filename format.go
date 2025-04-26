@@ -13,8 +13,8 @@ var errWriter io.Writer = os.Stderr
 
 // Print writes a formatted error to stderr.
 //
-// If the error implements the [ErrorDetails] interface, the result
-// of [ErrorDetails] is used for each wrapped error. Otherwise, the
+// If the error implements the [DetailedError] interface, the result
+// of [DetailedError] is used for each wrapped error. Otherwise, the
 // standard Error method is used. The formatted error can span
 // multiple lines and always ends with a newline.
 func Print(err error) {
@@ -23,8 +23,8 @@ func Print(err error) {
 
 // Sprint returns a formatted error as a string.
 //
-// If the error implements the [ErrorDetails] interface, the result
-// of [ErrorDetails] is used for each wrapped error. Otherwise, the
+// If the error implements the [DetailedError] interface, the result
+// of [DetailedError] is used for each wrapped error. Otherwise, the
 // standard Error method is used. The formatted error can span
 // multiple lines and always ends with a newline.
 func Sprint(err error) string {
@@ -35,8 +35,8 @@ func Sprint(err error) string {
 
 // Fprint writes a formatted error to the provided [io.Writer].
 //
-// If the error implements the [ErrorDetails] interface, the result
-// of [ErrorDetails] is used for each wrapped error. Otherwise, the
+// If the error implements the [DetailedError] interface, the result
+// of [DetailedError] is used for each wrapped error. Otherwise, the
 // standard Error method is used. The formatted error can span
 // multiple lines and always ends with a newline.
 func Fprint(w io.Writer, err error) (int, error) {
@@ -45,36 +45,39 @@ func Fprint(w io.Writer, err error) (int, error) {
 
 // fprint is a helper function that writes the formatted error to the
 // given [io.Writer].
-func fprint(w io.Writer, e error) (n int, err error) {
+//
+// This function will print all errors in the chain, that implement the
+// [DetailedError] interface, with the exception of the first error, which
+// will be printed using the standard Error method if it doesn't implement
+// the [DetailedError] interface.
+func fprint(w io.Writer, err error) (int, error) {
 	const firstErrorPrefix = "Error: "
 	const previousErrorPrefix = "Previous error: "
 	var buffer bytes.Buffer
 	first := true
-	for e != nil {
-		switch terr := e.(type) {
-		case ErrorDetails:
+	for err != nil {
+		switch tErr := err.(type) {
+		case DetailedError:
 			if first {
 				buffer.WriteString(firstErrorPrefix)
 			} else {
 				buffer.WriteString(previousErrorPrefix)
 			}
-			buffer.WriteString(terr.Error())
-			buffer.WriteByte('\n')
-			buffer.WriteString(terr.ErrorDetails())
+			buffer.WriteString(tErr.DetailedError())
 		default:
-			// If an error does not implement the ErrorDetails interface,
-			// then the Error() method will print all errors separated
+			// If an error does not implement the DetailedError interface,
+			// then the Error() method should print all errors separated
 			// with ":", so there is no need to render each error other than
 			// the first one.
 			if first {
 				buffer.WriteString(firstErrorPrefix)
-				buffer.WriteString(terr.Error())
+				buffer.WriteString(tErr.Error())
 				buffer.WriteByte('\n')
 			}
 		}
 		first = false
-		if we, ok := e.(unwrapper); ok {
-			e = we.Unwrap()
+		if wErr, ok := err.(interface{ Unwrap() error }); ok {
+			err = wErr.Unwrap()
 			continue
 		}
 		break

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const multiErrorErrorPrefix = "the following errors occurred: "
+const multiErrorPrefix = "the following errors occurred:"
 
 // Append appends the provided errors to an existing error or list of
 // errors. If `err` is not a [multiError], it will be converted into
@@ -19,6 +19,9 @@ const multiErrorErrorPrefix = "the following errors occurred: "
 // The returned error is compatible with Go errors, supporting
 // [errors.Is], [errors.As], and the Go 1.20 `Unwrap() []error`
 // method.
+//
+// To create a chained error, use [New], [Newf], [Join], or
+// [Joinf] instead.
 func Append(err error, errs ...error) error {
 	var me multiError
 	if err != nil {
@@ -54,8 +57,8 @@ type multiError []error
 // Error implements the [error] interface.
 func (e multiError) Error() string {
 	var s strings.Builder
-	s.WriteString(multiErrorErrorPrefix)
-	s.WriteString("[")
+	s.WriteString(multiErrorPrefix)
+	s.WriteString(" [")
 	for n, err := range e {
 		s.WriteString(err.Error())
 		if n < len(e)-1 {
@@ -66,9 +69,14 @@ func (e multiError) Error() string {
 	return s.String()
 }
 
-// ErrorDetails implements the [ErrorDetails] interface.
-func (e multiError) ErrorDetails() string {
+// DetailedError implements the [DetailedError] interface.
+func (e multiError) DetailedError() string {
+	if len(e) == 0 {
+		return ""
+	}
 	var s strings.Builder
+	s.WriteString(multiErrorPrefix)
+	s.WriteByte('\n')
 	for n, err := range e.Unwrap() {
 		s.WriteString(strconv.Itoa(n + 1))
 		s.WriteString(". ")
