@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const stackTraceDepth = 32
+const stackTraceDepth = 128
 
 // StackTrace extracts the stack trace from the provided error.
 // It traverses the error chain, looking for the last error that
