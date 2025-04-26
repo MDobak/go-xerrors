@@ -10,14 +10,14 @@ import (
 
 const stackTraceDepth = 32
 
-// StackTrace returns a stack trace from given error or the first stack trace
-// from the wrapped errors.
+// StackTrace extracts the stack trace from the given error or the
+// first wrapped error that implements [stackTracer].
 func StackTrace(err error) Callers {
 	for err != nil {
-		if e, ok := err.(StackTracer); ok {
+		if e, ok := err.(stackTracer); ok {
 			return e.StackTrace()
 		}
-		if e, ok := err.(Wrapper); ok {
+		if e, ok := err.(unwrapper); ok {
 			err = e.Unwrap()
 			continue
 		}
@@ -26,13 +26,11 @@ func StackTrace(err error) Callers {
 	return nil
 }
 
-// WithStackTrace adds a stack trace to the error at the point it was called.
-// The skip argument is the number of stack frames to skip.
+// WithStackTrace wraps the provided error with a stack trace,
+// capturing the stack at the point of the call. The `skip` argument
+// specifies how many stack frames to skip.
 //
-// This function is useful when you want to skip the first few frames in a
-// stack trace. To add a stack trace to a sentinel error, use the New function.
-//
-// If err is nil, then nil is returned.
+// If err is nil, WithStackTrace returns nil.
 func WithStackTrace(err error, skip int) error {
 	if err == nil {
 		return nil
@@ -43,55 +41,58 @@ func WithStackTrace(err error, skip int) error {
 	}
 }
 
-// withStackTrace adds a stack trace to en error.
+// withStackTrace wraps an error with a captured stack trace.
 type withStackTrace struct {
 	err   error
 	stack Callers
 }
 
-// Error implements the error interface.
+// Error implements the [error] interface.
 func (e *withStackTrace) Error() string {
 	return e.err.Error()
 }
 
-// ErrorDetails implements the DetailedError interface.
+// ErrorDetails implements the [ErrorDetails] interface.
 func (e *withStackTrace) ErrorDetails() string {
 	return e.stack.String()
 }
 
-// Unwrap implements the Wrapper interface.
+// Unwrap implements the Go 1.13 `Unwrap() []error` method, returning
+// the wrapped error.
 func (e *withStackTrace) Unwrap() error {
 	return e.err
 }
 
-// StackTrace implements the StackTracer interface.
+// StackTrace returns the stack trace captured at the point of the
+// error creation.
 func (e *withStackTrace) StackTrace() Callers {
 	return e.stack
 }
 
+// Frame represents a single stack frame with file, line, and
+// function details.
 type Frame struct {
 	File     string
 	Line     int
 	Function string
 }
 
-// String implements the fmt.Stringer interface.
+// String implements the [fmt.Stringer] interface.
 func (f Frame) String() string {
 	s := &strings.Builder{}
 	f.writeFrame(s)
 	return s.String()
 }
 
-// Format implements the fmt.Formatter interface.
+// Format implements the [fmt.Formatter] interface.
 //
-// The verbs:
-//
-// 	%s	function, file and line number in a single line
-// 	%f	filename
-// 	%d	line number
-// 	%n	function name, the plus flag adds a package name
-// 	%v	same as %s, the plus or hash flags print struct details
-// 	%q	a double-quoted Go string with same contents as %s
+// Supported verbs:
+//   - %s function, file, and line number in a single line
+//   - %f filename
+//   - %d line number
+//   - %n function name, with '+' flag adding the package name
+//   - %v same as %s; '+' or '#' flags print struct details
+//   - %q double-quoted Go string, same as %s
 func (f Frame) Format(s fmt.State, verb rune) {
 	type _Frame Frame
 	switch verb {
@@ -122,6 +123,7 @@ func (f Frame) Format(s fmt.State, verb rune) {
 	}
 }
 
+// writeFrame writes a formatted stack frame to the given [io.Writer].
 func (f Frame) writeFrame(w io.Writer) {
 	io.WriteString(w, "\tat ")
 	io.WriteString(w, shortname(f.Function))
@@ -132,10 +134,12 @@ func (f Frame) writeFrame(w io.Writer) {
 	io.WriteString(w, ")")
 }
 
-// Callers is a list of program counters returned by the runtime.Callers.
+// Callers represents a list of program counters from the
+// [runtime.Callers] function.
 type Callers []uintptr
 
-// Frames returns a slice of structures with a function/file/line information.
+// Frames returns a slice of [Frame] structs with function, file, and
+// line information.
 func (c Callers) Frames() []Frame {
 	r := make([]Frame, len(c))
 	f := runtime.CallersFrames(c)
@@ -155,20 +159,19 @@ func (c Callers) Frames() []Frame {
 	return r
 }
 
-// String implements the fmt.Stringer interface.
+// String implements the [fmt.Stringer] interface.
 func (c Callers) String() string {
 	s := &strings.Builder{}
 	c.writeTrace(s)
 	return s.String()
 }
 
-// Format implements the fmt.Formatter interface.
+// Format implements the [fmt.Formatter] interface.
 //
-// The verbs:
-//
-// 	%s	a stack trace
-// 	%v	same as %s, the plus or hash flags print struct details
-// 	%q	a double-quoted Go string with same contents as %s
+// Supported verbs:
+//   - %s complete stack trace
+//   - %v same as %s; '+' or '#' flags print struct details
+//   - %q double-quoted Go string, same as %s
 func (c Callers) Format(s fmt.State, verb rune) {
 	type _Callers Callers
 	switch verb {
@@ -188,6 +191,7 @@ func (c Callers) Format(s fmt.State, verb rune) {
 	}
 }
 
+// writeTrace writes the stack trace to the provided [io.Writer].
 func (c Callers) writeTrace(w io.Writer) {
 	frames := c.Frames()
 	for _, frame := range frames {
@@ -196,12 +200,22 @@ func (c Callers) writeTrace(w io.Writer) {
 	}
 }
 
+// stackTracer represents an error that provides a stack trace.
+type stackTracer interface {
+	error
+	StackTrace() Callers
+}
+
+// callers captures the current stack trace, skipping the specified
+// number of frames.
 func callers(skip int) Callers {
 	b := make([]uintptr, stackTraceDepth)
 	l := runtime.Callers(skip+2, b[:])
 	return b[:l]
 }
 
+// shortname extracts the short name of a function, removing the
+// package path.
 func shortname(name string) string {
 	i := strings.LastIndex(name, "/")
 	return name[i+1:]

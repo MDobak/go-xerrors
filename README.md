@@ -1,39 +1,50 @@
 # go-xerrors
 
-`go-xerrors` is an idiomatic and lightweight package that provides a set of functions to make working with errors
-easier. It adds support for stack traces, multierrors, and simplifies working with wrapped errors and panics.
-The `go-xerrors` package is fully compatible with Go errors 1.13, supporting the `errors.As`, `errors.Is`,
-and `errors.Unwrap` functions.
+`go-xerrors` is an idiomatic and lightweight Go package designed to enhance error handling in Go applications. It provides functions and types that simplify common error handling tasks by adding support for stack traces, combining multiple errors (multi-errors), and offering flexible error wrapping capabilities. The package also includes utilities for streamlined panic handling. `go-xerrors` maintains full compatibility with Go's standard error handling features (Go 1.13+), including `errors.As`, `errors.Is`, and `errors.Unwrap`.
 
-**Main features:**
-- Stack traces
-- Multierrors
-- More flexible error warping
-- Simplified panic handling
+**Main Features:**
+
+- **Stack Traces**: Automatically captures and attaches stack traces to errors upon creation, significantly aiding in debugging and pinpointing the origin of issues.
+- **Multi-Errors**: Allows for the aggregation of multiple errors into a single error instance, useful for reporting all failures from operations that involve multiple steps or components.
+- **Flexible Error Wrapping**: Provides ways to wrap errors with additional context or messages. Supports wrapping multiple underlying errors simultaneously while preserving the ability to inspect each one individually.
+- **Simplified Panic Handling**: Offers functions to convert recovered panic values into standard Go errors, complete with stack traces, facilitating more robust error recovery logic.
 
 ---
 
 ## Installation
 
-`go get -u github.com/mdobak/go-xerrors`
+```bash
+go get -u github.com/mdobak/go-xerrors
+```
 
 ## Usage
 
-### Basic errors and stack traces
+### Basic Errors and Stack Traces
 
-The most useful function in the package is the `xerrors.New` function. This function creates a new error based on the
-given message and records the stack trace at the point it was called.
-
-The simplest use of the `xerrors.New` function is to create a simple string-based error along with a stack trace:
+A primary use of `go-xerrors` is creating errors that automatically include a stack trace via the `xerrors.New` function:
 
 ```go
-err := xerrors.New("access denied")
+err := xerrors.New("something went wrong")
 ```
 
-However, calling the `Error` method on the returned error will only return the string that was passed to
-the `xerrors.New` function. To retrieve a stack trace, the `xerrors.StackTrace` function may be used. This method will
-return an `xerrors.Callers` object, which can be represented as a string using the `fmt` package or by using
-the `String` method.
+Invoking the standard `Error()` method on this `err` returns only the message ("something went wrong"), adhering to the Go convention of providing a concise error description.
+
+To display the error with its associated stack trace and other potential details, use the `xerrors.Print`, `xerrors.Sprint`, or `xerrors.Fprint` functions. These functions are designed to format errors created by `go-xerrors`, including their detailed information.
+
+```go
+xerrors.Print(err)
+```
+
+Output:
+
+```
+Error: something went wrong
+	at main.main (/home/user/app/main.go:10)
+	at runtime.main (/usr/local/go/src/runtime/proc.go:225)
+	at runtime.goexit (/usr/local/go/src/runtime/asm_amd64.s:1371)
+```
+
+To retrieve only the stack trace information programmatically, use `xerrors.StackTrace`. This function returns an `xerrors.Callers` object, which can be formatted as a string.
 
 ```go
 trace := xerrors.StackTrace(err)
@@ -48,136 +59,183 @@ Output:
 	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1133)
 ```
 
-Another way to display a stack trace is to use the `xerrors.Print`, `xerrors.Sprint`, or `xerrors.Fprint` methods. These
-methods automatically detect whether the specified error contains additional information, such as the stack trace, and
-display it along with the error message:
+### Sentinel Errors
 
-```go
-xerrors.Print(err)
-```
+Sentinel errors are predefined error values representing specific, known failure conditions (e.g., `io.EOF`). They are typically declared as package-level variables. Using sentinel errors allows for reliable error checking using `errors.Is`, avoiding direct string comparisons of error messages.
 
-Output:
-
-```
-Error: access denied
-	at main.TestMain (/home/user/app/main_test.go:10)
-	at testing.tRunner (/home/user/go/src/testing/testing.go:1259)
-	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1133)
-```
-
-### Error wrapping
-
-The `xerrors.New` function accepts not only strings but also other errors. For example, it can be used to add a stack
-trace to sentinel errors. The `xerrors` package provides the `xerrors.Message` function, that creates string-based
-sentinel errors, to add a stack trace to them, they need to be passed to the `xerrors.New` function:
-
-```jsx
-var ErrAccessDenied = xerrors.Message("access denied")
-// ...
-err := xerrors.New(ErrAccessDenied)
-```
-
-Another way to use the `xerrors.New` function is to wrap errors:
-
-```jsx
-err := xerrors.New("unable to open resource", ErrAccessDenied)
-err.Error() // unable to open resource: access denied
-```
-
-It is also possible to wrap an error in another error:
+`go-xerrors` provides `xerrors.Message` to create distinct sentinel error values with consistent messages.
 
 ```go
 var ErrAccessDenied = xerrors.Message("access denied")
-var ErrResourceOpenFailed = xerrors.Message("unable to open resource")
+
 // ...
-err := xerrors.New(ErrResourceOpenFailed, ErrAccessDenied)
-err.Error() // unable to open resource: access denied
-errors.Is(err, ErrResourceOpenFailed) // true
-errors.Is(err, ErrAccessDenied) // true
+
+func performAction() error {
+	// ...
+	return xerrors.New(ErrAccessDenied) // Wrap the sentinel to add a stack trace
+}
+
+// ...
+
+err := performAction()
+if errors.Is(err, ErrAccessDenied) {
+    log.Println("Operation failed due to access denial.")
+    xerrors.Print(err) // Prints the error with stack trace
+}
 ```
 
-Unlike the standard `fmt.Errorf` function, `xerrors.New` keeps references to both errors so that no information is lost
-during wrapping.
+### Error Wrapping
 
-### Multierrors
+The `xerrors.New` function can wrap existing errors, which is useful for adding stack traces or providing additional contextual information.
 
-Multierrors allow storing a list of errors in a single error, allowing multiple errors to be returned from a function.
-It supports the `errors.Is` and `errors.As` methods. However, the `errors.Unwrap` method is not supported.
+**Adding Stack Traces to Existing Errors:**
 
-To create a new multierror, the function `xerrors.Append` should be used. It works similarly to the append function in
-the Go language:
+If you receive an error (like a sentinel error) that lacks a stack trace, you can wrap it using `xerrors.New`:
+
+```go
+var ErrResourceBusy = xerrors.Message("resource is busy")
+
+// ...
+originalErr := checkResourceStatus() // Returns ErrResourceBusy without stack trace
+if originalErr != nil {
+    // Wrap the original error to capture the stack trace at this point
+    errWithTrace := xerrors.New(originalErr)
+    if errors.Is(errWithTrace, ErrResourceBusy) {
+        xerrors.Print(errWithTrace) // Prints "resource is busy" with stack trace
+    }
+}
+```
+
+**Wrapping Errors with Additional Context:**
+
+Provide a descriptive string as the first argument to `xerrors.New`, followed by the error(s) to wrap:
+
+```go
+if err := updateUserProfile(user); err != nil {
+	return xerrors.New("failed to update user profile", err) // failed to update user profile: <original error>
+}
+```
+
+**Wrapping Multiple Errors:**
+
+`xerrors.New` can wrap multiple errors simultaneously:
+
+```go
+var ErrConnectionFailed = xerrors.Message("connection failed")
+var ErrTimeout = xerrors.Message("operation timed out")
+
+// Wrap both errors under a single contextual message
+combinedErr := xerrors.New("data retrieval failed", ErrConnectionFailed, ErrTimeout)
+
+fmt.Println(combinedErr.Error()) // data retrieval failed: connection failed: operation timed out
+```
+
+This feature is useful when a high-level operation fails due to multiple underlying issues that need to be reported together.
+
+### Multi-Errors (Error Aggregation)
+
+When performing multiple independent operations where several might fail (e.g., validating multiple inputs, processing batch items), use `xerrors.Append` to collect these individual errors into a single multi-error instance.
+
+`xerrors.Append` behaves like Go's built-in `append` but is specifically designed for aggregating errors.
 
 ```go
 var err error
-if len(unsername) == 0 {
-	err = xerrors.Append(err, xerrors.New("username cannot be empty"))
+
+if input.Username == "" {
+    // Append creates/adds to the multi-error, including stack trace if using xerrors.New
+    err = xerrors.Append(err, xerrors.New("username cannot be empty"))
 }
-if len(password) < 8 {
-	err = xerrors.Append(err, xerrors.New("password is too short"))
+if len(input.Password) < 8 {
+    err = xerrors.Append(err, xerrors.New("password must be at least 8 characters"))
+}
+
+if err != nil {
+    fmt.Println(err.Error()) // the following errors occurred: [username cannot be empty, password must be at least 8 characters]
+
+    // Detailed output using xerrors.Print:
+    xerrors.Print(err)
+    // Output:
+    // Error: the following errors occurred: [username cannot be empty, password must be at least 8 characters]
+    // 1. Error: username cannot be empty
+    // 	at main.validateInput (/path/to/your/file.go:XX)
+    // 	... stack trace ...
+    // 2. Error: password must be at least 8 characters
+    // 	at main.validateInput (/path/to/your/file.go:YY)
+    // 	... stack trace ...
 }
 ```
 
-The error list can be displayed in several ways. The simplest way is to use the `Error` method, which will display
-errors as a long, one-line string:
+The resulting multi-error implements the standard `error` interface as well as `errors.Is`, `errors.As`, and `errors.Unwrap`, allowing you to check for specific errors or extract them.
+
+**Comparison with Go 1.20 `errors.Join`:**
+
+Go 1.20 introduced `errors.Join` for error aggregation. While serving a similar purpose, `xerrors.Append` (especially when used with errors created by `xerrors.New`) offers some differences:
+
+1.  **Individual Stack Traces**: `go-xerrors` multi-errors preserve the individual stack traces associated with each appended error. `errors.Join` does not inherently manage stack traces for the errors it combines.
+2.  **Enhanced Formatting**: `xerrors.Print`, `Sprint`, and `Fprint` provide detailed, structured output for multi-errors, listing each constituent error and its stack trace, which can be beneficial for debugging.
+3.  **Consistent `Error()` Output**: The `Error()` method of a `go-xerrors` multi-error consistently produces a concise, single-line summary. The output format of `errors.Join`'s `Error()` method can vary.
+
+### Simplified Panic Handling
+
+Go's `recover()` built-in returns the value passed to `panic`, which has type `any` and doesn't directly implement the `error` interface. `go-xerrors` provides utilities to convert these recovered values into proper errors with stack traces.
+
+**Using `xerrors.Recover`:**
+
+This function wraps `recover()` and executes a callback function only if a panic occurred. The callback receives the panic value converted to an `error` (with stack trace). Use it directly with `defer`.
 
 ```go
-the following errors occurred: [username cannot be empty, password is too short]
+func handleTask() (err error) {
+	defer xerrors.Recover(func(err error) {
+		err = xerrors.FromRecover(r) // Convert recovered value to error with stack trace
+		log.Printf("Recovered from panic during task handling: %s", xerrors.Sprint(err))
+	})
+
+	// ... potentially panicking code ...
+	panic("task failed")
+
+	return nil
+}
 ```
 
-Most messages returned by the `Error` method are one-line strings, the `xerrors` package follows this convention.
+**Using `xerrors.FromRecover`:**
 
-Another way is to use one of the following functions: `xerrors.Print`, `xerrors.Sprint`, or `xerrors.Fprint`. The
-advantage of using these functions is that they will also display additional details, such as stack traces, and the
-error message is much easier to read:
-
-```
-Error: the following errors occurred: [username cannot be empty, password is too short]
-1. Error: username cannot be empty
-	at xerrors.TestFprint (/home/user/app/main_test.go:10)
-	at testing.tRunner (/home/user/go/src/testing/testing.go:1439)
-	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1259)
-2. Error: password is too short
-	at xerrors.TestFprint (/home/user/app/main_test.go:13)
-	at testing.tRunner (/home/user/go/src/testing/testing.go:1439)
-	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1259)
-```
-
-Finally, multierror implements the `xerrors.MultiError` interface, which provides the `Errors` method that returns a
-list of errors.
-
-### Recovered panics
-
-In Go, the values returned by the `recover` built-in do not implement the `error` interface, which may be inconvenient.
-For this reason, the package provides two functions to convert recovered panics to errors.
-
-The first function, `xerrors.Recover`, works similarly to the `recover` built-in. This function must always be called
-directly using the `defer` keyword. The callback will only be called during a panic, and the provided error will contain
-a stack trace:
+If you prefer the standard `recover()` pattern, use `xerrors.FromRecover` to manually convert the recovered value after checking if `recover()` returned non-nil.
 
 ```go
-defer xerrors.Recover(func (err error) {
-	xerrors.Print(err)
-})
+func handleTask() (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err := xerrors.FromRecover(r) // Convert recovered value to error with stack trace
+			log.Printf("Recovered from panic during task handling: %s", xerrors.Sprint(err))
+		}
+	}()
+
+	// ... potentially panicking code ...
+	panic("task failed")
+
+	return nil
+}
 ```
 
-The second function allows converting a value returned from `recover` built-in to an error with a stack trace:
+## API Summary
 
-```go
-defer func () {
-	if r := recover(); r != nil {
-		err := xerrors.FromRecover(r)
-		xerrors.Print(err)
-	}
-}()
-```
+Core components of the `go-xerrors` package:
 
-### Documentation
+- `xerrors.New(errors ...any) error`: Creates a new error, automatically capturing a stack trace. Can wrap one or multiple existing errors and optionally add a context message.
+- `xerrors.Message(message string) error`: Creates a simple sentinel error value identified by its type and message.
+- `xerrors.Append(err error, errs ...error) error`: Aggregates errors. Appends new errors to an existing error (or `nil`), returning a multi-error instance. Preserves stack traces of appended errors.
+- `xerrors.Recover(callback func(err error))`: A utility function for use with `defer`. It recovers from panics and invokes the provided callback with the panic value converted to an error (including stack trace).
+- `xerrors.FromRecover(recoveredValue any) error`: Converts a value returned by the built-in `recover()` function into an error instance with a stack trace.
+- `xerrors.Print(err error)`, `xerrors.Sprint(err error) string`, `xerrors.Fprint(w io.Writer, err error)`: Formatting functions that output errors with detailed information, including stack traces and structured multi-error breakdowns.
+- `xerrors.StackTrace(err error) Callers`: Extracts the stack trace information from an error created or wrapped by `go-xerrors`.
+- Standard Go compatibility: Fully supports `errors.Is`, `errors.As`, and `errors.Unwrap` for interoperability.
 
-This package offers a few additional functions and interfaces that may be useful in some use cases. More information
-about them can be found in the documentation:
+## Documentation
+
+For comprehensive details on all functions and types, please refer to the full documentation available at:
 
 [https://pkg.go.dev/github.com/mdobak/go-xerrors](https://pkg.go.dev/github.com/mdobak/go-xerrors)
 
-### License
+## License
 
-Licensed under MIT License
+Licensed under the MIT License.

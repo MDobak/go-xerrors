@@ -4,12 +4,23 @@ import (
 	"fmt"
 )
 
-// Recover wraps the recover() built-in and converts a value returned by it to
-// an error with a stack trace. The fn callback will be invoked only during
-// panicking.
+// PanicError represents an error that occurs during a panic. It is
+// returned by the [Recover] and [FromRecover] functions. It provides
+// access to the original panic value via the [Panic] method.
+type PanicError interface {
+	error
+
+	// Panic returns the value that caused the panic.
+	Panic() any
+}
+
+// Recover wraps the built-in `recover()` function, converting the
+// recovered value into an error with a stack trace. The provided `fn`
+// callback is only invoked when a panic occurs. The error passed to
+// `fn` implements [PanicError].
 //
-// This function must always be used *directly* with the "defer" keyword.
-// Otherwise, it will not work.
+// This function must always be used directly with the `defer`
+// keyword; otherwise, it will not function correctly.
 func Recover(fn func(err error)) {
 	if r := recover(); r != nil {
 		fn(&withStackTrace{
@@ -19,12 +30,13 @@ func Recover(fn func(err error)) {
 	}
 }
 
-// FromRecover takes the result of the recover() built-in and converts it to
-// an error with a stack trace.
+// FromRecover converts the result of the built-in `recover()` into
+// an error with a stack trace. The returned error implements
+// [PanicError]. Returns nil if `r` is nil.
 //
-// This function must be invoked in the same function as recover(), otherwise
-// the returned stack trace will not be correct.
-func FromRecover(r interface{}) error {
+// This function must be called in the same function as `recover()`
+// to ensure the stack trace is accurate.
+func FromRecover(r any) error {
 	if r == nil {
 		return nil
 	}
@@ -34,18 +46,18 @@ func FromRecover(r interface{}) error {
 	}
 }
 
-// panicError is an error constructed from a value returned by the recover()
-// built-in during panicking.
+// panicError represents an error that occurs during a panic,
+// constructed from the value returned by `recover()`.
 type panicError struct {
-	panic interface{}
+	panic any
 }
 
-// Panic returns the value from the recover() function.
-func (e *panicError) Panic() interface{} {
+// Panic implements the [PanicError] interface.
+func (e *panicError) Panic() any {
 	return e.panic
 }
 
-// Error implements the error interface.
+// Error implements the [error] interface.
 func (e *panicError) Error() string {
 	return fmt.Sprintf("panic: %v", e.panic)
 }

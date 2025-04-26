@@ -20,7 +20,7 @@ func TestAppend(t *testing.T) {
 		{err: Message("a"), errs: nil, want: "a"},
 		{err: multiError{Message("a"), Message("b")}, errs: nil, want: "the following errors occurred: [a, b]"},
 		{err: multiError{Message("a"), Message("b")}, errs: []error{Message("c")}, want: "the following errors occurred: [a, b, c]"},
-		{err: multiError{}, errs: []error{Message("a"), nil}, want: "the following errors occurred: [a]"},
+		{err: multiError{}, errs: []error{Message("a"), nil}, want: "a"},
 		{err: nil, errs: nil, wantNil: true},
 		{err: nil, errs: []error{nil, nil}, wantNil: true},
 	}

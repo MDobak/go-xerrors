@@ -36,21 +36,21 @@ func TestMessage(t *testing.T) {
 
 func TestNew(t *testing.T) {
 	tests := []struct {
-		vals    []interface{}
+		vals    []any
 		want    string
 		wantNil bool
 	}{
-		{vals: []interface{}{""}, want: ""},
-		{vals: []interface{}{"foo", "bar"}, want: "foo: bar"},
-		{vals: []interface{}{nil, "foo", "bar"}, want: "foo: bar"},
-		{vals: []interface{}{"foo", nil, "bar"}, want: "foo: bar"},
-		{vals: []interface{}{Message("foo"), Message("bar")}, want: "foo: bar"},
-		{vals: []interface{}{io.EOF, io.EOF}, want: "EOF: EOF"},
-		{vals: []interface{}{stringer{s: "foo"}, stringer{s: "bar"}}, want: "foo: bar"},
-		{vals: []interface{}{42, 314}, want: "42: 314"},
-		{vals: []interface{}{}, wantNil: true},
-		{vals: []interface{}{nil}, wantNil: true},
-		{vals: []interface{}{nil, nil}, wantNil: true},
+		{vals: []any{""}, want: ""},
+		{vals: []any{"foo", "bar"}, want: "foo: bar"},
+		{vals: []any{nil, "foo", "bar"}, want: "foo: bar"},
+		{vals: []any{"foo", nil, "bar"}, want: "foo: bar"},
+		{vals: []any{Message("foo"), Message("bar")}, want: "foo: bar"},
+		{vals: []any{io.EOF, io.EOF}, want: "EOF: EOF"},
+		{vals: []any{stringer{s: "foo"}, stringer{s: "bar"}}, want: "foo: bar"},
+		{vals: []any{42, 314}, want: "42: 314"},
+		{vals: []any{}, wantNil: true},
+		{vals: []any{nil}, wantNil: true},
+		{vals: []any{nil, nil}, wantNil: true},
 	}
 	for n, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", n+1), func(t *testing.T) {

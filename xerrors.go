@@ -4,94 +4,52 @@ import (
 	"fmt"
 )
 
-// Wrapper provides context around another error.
-type Wrapper interface {
-	error
-	Unwrap() error
-}
-
-// StackTracer provides a stack trace for an error.
-type StackTracer interface {
-	error
-	StackTrace() Callers
-}
-
-// MultiError is an error that contains multiple errors.
-type MultiError interface {
-	error
-	Errors() []error
-}
-
-// DetailedError provides extended information about an error.
-// The ErrorDetails method returns a longer, multi-line description of
-// the error. It always ends with a new line.
-type DetailedError interface {
+// ErrorDetails represents an error that provides additional details
+// beyond the error message.
+//
+// The ErrorDetails method returns a longer, multi-line description
+// of the error. It always ends with a new line.
+type ErrorDetails interface {
 	error
 	ErrorDetails() string
 }
 
-// messageError is the simplest possible error that contains only
-// a string message.
-type messageError struct {
-	msg string
-}
-
-// Error implements the error interface.
-func (e *messageError) Error() string {
-	return e.msg
-}
-
-// Message creates a simple error with the given message. It does not record
-// a stack trace. Each call returns a distinct error value even if the
-// message is identical.
+// Message creates a simple error with the given message, without
+// recording a stack trace. Each call returns a distinct error
+// instance, even if the message is identical.
 //
-// This function is intended to create sentinel errors, sometimes referred
-// to as "constant errors".
+// This function is useful for creating sentinel errors, often
+// referred to as "constant errors."
 func Message(msg string) error {
 	return &messageError{msg: msg}
 }
 
-// New creates a new error from the given value and records a stack trace at
-// the point it was called. If multiple values are provided, then each error
-// is wrapped by the previous error. Calling New(a, b, c), where a, b, and c
-// are errors, is equivalent to calling New(WithWrapper(WithWrapper(a, b), c)).
+// New creates a new error from the provided values and records a
+// stack trace at the point of the call. If multiple values are
+// provided, each value is wrapped by the previous one, forming a
+// chain of errors.
 //
-// This function may be used to:
+// Usage examples:
+//   - Add a stack trace to an existing error: New(err)
+//   - Create an error with a message and a stack trace: New("access denied")
+//   - Wrap an error with a message: New("access denied", io.EOF)
+//   - Add context to a sentinel error: New(ErrReadError, "access denied")
 //
-// - Add a stack trace to an error: New(err)
+// Conversion rules for arguments:
+//   - If the value is an error, it is used as is.
+//   - If the value is a string, a new error with that message is
+//     created.
+//   - If the value implements [fmt.Stringer], the result of
+//     String() is used to create an error.
+//   - If the value is nil, it is ignored.
+//   - Otherwise, the result of [fmt.Sprint] is used to create an
+//     error.
 //
-// - Create a message error with a stack trace: New("access denied")
+// If called with no arguments or only nil values, New returns nil.
 //
-// - Wrap an error with a message: New("access denied", io.EOF)
-//
-// - Wrap one error in another: New(ErrAccessDenied, io.EOF)
-//
-// - Add a message to a sentinel error: New(ErrReadError, "access denied")
-//
-// Values are converted to errors according to the following rules:
-//
-// - If a value is an error, it will be used as is.
-//
-// - If a value is a string, then new error with a given string as a message
-// will be created.
-//
-// - If a value is nil, it will be ignored.
-//
-// - If a value implements the fmt.Stringer interface, then a String() method
-// will be used to create an error.
-//
-// - For other types the result of fmt.Sprint will be used to create a message
-// error.
-//
-// It is possible to use errors.Is function on returned error to check whether
-// an error has been used in the New function.
-//
-// If the function is called with no arguments or all arguments are nil, it
-// returns nil.
-//
-// To create a simple message error without a stack trace to be used as a
-// sentinel error, use the Message function instead.
-func New(vals ...interface{}) error {
+// For simple errors without a stack trace, use the [Message]
+// function.
+func New(vals ...any) error {
 	var errs error
 	for _, val := range vals {
 		if val == nil {
@@ -116,7 +74,25 @@ func New(vals ...interface{}) error {
 	}
 }
 
-func toError(val interface{}) error {
+// unwrapper represents an error that wraps another error, providing
+// additional context.
+type unwrapper interface {
+	error
+	Unwrap() error
+}
+
+// messageError represents a simple error that contains only a string
+// message.
+type messageError struct {
+	msg string
+}
+
+// Error implements the [error] interface.
+func (e *messageError) Error() string {
+	return e.msg
+}
+
+func toError(val any) error {
 	var err error
 	switch typ := val.(type) {
 	case error:

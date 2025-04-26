@@ -9,7 +9,7 @@ import (
 
 func TestRecover(t *testing.T) {
 	tests := []struct {
-		panic interface{}
+		panic any
 		want  string
 	}{
 		{panic: nil, want: ""},
@@ -53,7 +53,7 @@ func TestRecover(t *testing.T) {
 
 func TestFromRecover(t *testing.T) {
 	tests := []struct {
-		panic interface{}
+		panic any
 		want  string
 	}{
 		{panic: nil, want: ""},

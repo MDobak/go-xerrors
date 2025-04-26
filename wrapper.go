@@ -5,16 +5,15 @@ import (
 	"strings"
 )
 
-// WithWrapper wraps err with wrapper.
+// WithWrapper wraps `err` with a `wrapper` error.
 //
-// The error used as wrapper should be a simple error, preferably a sentinel
-// error. This is because details such as the wrapper's stack trace are ignored.
+// The `wrapper` should generally be a simple, sentinel error, as
+// details like its stack trace are ignored. The `Unwrap` method
+// will only unwrap `err`, but [errors.Is] and [errors.As] work
+// with both `wrapper` and `err`.
 //
-// The Unwrap method will unwrap only err but errors.Is, errors.As works with
-// both of the errors.
-//
-// If wrapper is nil, then err is returned.
-// If err is nil, then nil is returned.
+// If `wrapper` is nil, `err` is returned. If `err` is nil,
+// WithWrapper returns nil.
 func WithWrapper(wrapper error, err error) error {
 	if err == nil {
 		return nil
@@ -34,7 +33,7 @@ type withWrapper struct {
 	err     error
 }
 
-// Error implements the error interface.
+// Error implements the [error] interface.
 func (e *withWrapper) Error() string {
 	s := &strings.Builder{}
 	s.WriteString(e.wrapper.Error())
@@ -43,15 +42,20 @@ func (e *withWrapper) Error() string {
 	return s.String()
 }
 
-// Unwrap implements the Wrapper interface.
+// Unwrap implements the Go 1.13 `Unwrap() []error` method, returning
+// the wrapped error.
 func (e *withWrapper) Unwrap() error {
 	return e.err
 }
 
-func (e *withWrapper) As(target interface{}) bool {
+// As implements the Go 1.13 `errors.As` method, allowing type
+// assertions on all errors in the list.
+func (e *withWrapper) As(target any) bool {
 	return errors.As(e.wrapper, target) || errors.As(e.err, target)
 }
 
+// Is implements the Go 1.13 `errors.Is` method, allowing
+// comparisons with all errors in the list.
 func (e *withWrapper) Is(target error) bool {
 	return errors.Is(e.wrapper, target) || errors.Is(e.err, target)
 }
