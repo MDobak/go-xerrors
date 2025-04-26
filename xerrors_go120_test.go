@@ -43,7 +43,7 @@ func TestJoinf_Go120(t *testing.T) {
 	}
 }
 
-func TestJoinf_Unwrap(t *testing.T) {
+func TestJoinf_Unwrap_Go120(t *testing.T) {
 	err1 := Message("first error")
 	err2 := Message("second error")
 	got := Joinf("%w: %w", err1, err2)
