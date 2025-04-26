@@ -229,7 +229,7 @@ func TestJoin_Unwrap(t *testing.T) {
 	if unwrapped == nil {
 		t.Fatalf("Join(err1, err2).Unwrap() must not return nil")
 	}
-	if !(!errors.Is(unwrapped, err1) && errors.Is(unwrapped, err2)) {
+	if errors.Is(unwrapped, err1) || !errors.Is(unwrapped, err2) {
 		t.Fatalf("Join(err1, err2).Unwrap() must return the second error")
 	}
 }
