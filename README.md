@@ -153,7 +153,7 @@ if err != nil {
     // Detailed output using xerrors.Print:
     xerrors.Print(err)
     // Output:
-    // Error: the following errors occurred: [username cannot be empty, password must be at least 8 characters]
+    // Error: the following errors occurred:
     // 1. Error: username cannot be empty
     // 	at main.validateInput (/path/to/your/file.go:XX)
     // 	... stack trace ...
