@@ -60,22 +60,22 @@ func TestAppend(t *testing.T) {
 	}
 }
 
-func TestMultiError_DetailedError(t *testing.T) {
+func TestMultiError_ErrorDetails(t *testing.T) {
 	tests := []struct {
 		errs   []error
 		want   string
 		regexp bool
 	}{
 		{errs: []error{}, want: ``},
-		{errs: []error{Message("a")}, want: "the following errors occurred:\n1. Error: a\n"},
-		{errs: []error{Message("a"), Message("b")}, want: "the following errors occurred:\n1. Error: a\n2. Error: b\n"},
-		{errs: []error{Message("a"), multiError{Message("b"), Message("c")}}, want: "the following errors occurred:\n1. Error: a\n2. Error: the following errors occurred:\n\t1. Error: b\n\t2. Error: c\n"},
+		{errs: []error{Message("a")}, want: "1. Error: a\n"},
+		{errs: []error{Message("a"), Message("b")}, want: "1. Error: a\n2. Error: b\n"},
+		{errs: []error{Message("a"), multiError{Message("b"), Message("c")}}, want: "1. Error: a\n2. Error: the following errors occurred: [b, c]\n\t1. Error: b\n\t2. Error: c\n"},
 	}
 	for n, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", n+1), func(t *testing.T) {
 			err := multiError(tt.errs)
-			if got := err.DetailedError(); got != tt.want {
-				t.Errorf("multiError(errs).DetailedError(): %q does not match %q", got, tt.want)
+			if got := err.ErrorDetails(); got != tt.want {
+				t.Errorf("multiError(errs).ErrorDetails(): %q does not match %q", got, tt.want)
 			}
 		})
 	}

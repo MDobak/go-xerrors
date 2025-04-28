@@ -30,6 +30,14 @@ func (e *withWrapper) Error() string {
 	return s.String()
 }
 
+// ErrorDetails implements the [DetailedError] interface.
+func (e *withWrapper) ErrorDetails() string {
+	if dErr, ok := e.wrapper.(DetailedError); ok {
+		return dErr.ErrorDetails()
+	}
+	return ""
+}
+
 // Unwrap implements the Go 1.13 `Unwrap() error` method, returning
 // the wrapped error.
 //

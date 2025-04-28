@@ -16,8 +16,8 @@ func (e testErr) Error() string {
 	return e.err
 }
 
-func (e testErr) DetailedError() string {
-	return e.err + "\n" + e.details + "\n"
+func (e testErr) ErrorDetails() string {
+	return e.details + "\n"
 }
 
 func (e testErr) Unwrap() error {

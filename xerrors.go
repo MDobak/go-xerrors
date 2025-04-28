@@ -6,12 +6,15 @@ import (
 
 // DetailedError represents an error that provides additional details
 // beyond the error message.
-//
-// The DetailedError method returns a longer, multi-line description
-// of the error. It always ends with a new line.
 type DetailedError interface {
 	error
-	DetailedError() string
+
+	// ErrorDetails returns additional details about the error. It should not
+	// repeat the error message and should end with a newline.
+	//
+	// An empty string is returned if the error does not provide
+	// additional details.
+	ErrorDetails() string
 }
 
 // Message creates a simple error with the given message, without

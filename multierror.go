@@ -69,14 +69,12 @@ func (e multiError) Error() string {
 	return s.String()
 }
 
-// DetailedError implements the [DetailedError] interface.
-func (e multiError) DetailedError() string {
+// ErrorDetails implements the [DetailedError] interface.
+func (e multiError) ErrorDetails() string {
 	if len(e) == 0 {
 		return ""
 	}
 	var s strings.Builder
-	s.WriteString(multiErrorPrefix)
-	s.WriteByte('\n')
 	for n, err := range e.Unwrap() {
 		s.WriteString(strconv.Itoa(n + 1))
 		s.WriteString(". ")

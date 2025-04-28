@@ -61,3 +61,11 @@ func (e *panicError) Panic() any {
 func (e *panicError) Error() string {
 	return fmt.Sprintf("panic: %v", e.panic)
 }
+
+// ErrorDetails implements the [DetailedError] interface.
+func (e *panicError) ErrorDetails() string {
+	if dErr, ok := e.panic.(DetailedError); ok {
+		return dErr.ErrorDetails()
+	}
+	return ""
+}

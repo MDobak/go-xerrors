@@ -54,13 +54,9 @@ func (e *withStackTrace) Error() string {
 	return e.err.Error()
 }
 
-// DetailedError implements the [DetailedError] interface.
-func (e *withStackTrace) DetailedError() string {
-	s := &strings.Builder{}
-	s.WriteString(e.err.Error())
-	s.WriteString("\n")
-	s.WriteString(e.stack.String())
-	return s.String()
+// ErrorDetails implements the [DetailedError] interface.
+func (e *withStackTrace) ErrorDetails() string {
+	return e.stack.String()
 }
 
 // Unwrap implements the Go 1.13 `Unwrap() error` method, returning
