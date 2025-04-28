@@ -148,12 +148,12 @@ if len(input.Password) < 8 {
 }
 
 if err != nil {
-    fmt.Println(err.Error()) // the following errors occurred: [username cannot be empty, password must be at least 8 characters]
+    fmt.Println(err.Error()) // [username cannot be empty, password must be at least 8 characters]
 
     // Detailed output using xerrors.Print:
     xerrors.Print(err)
     // Output:
-    // Error: the following errors occurred:
+    // Error: [username cannot be empty, password must be at least 8 characters]
     // 1. Error: username cannot be empty
     // 	at main.validateInput (/path/to/your/file.go:XX)
     // 	... stack trace ...

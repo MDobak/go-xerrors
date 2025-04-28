@@ -14,12 +14,12 @@ func TestAppend(t *testing.T) {
 		want    string
 		wantNil bool
 	}{
-		{err: nil, errs: []error{Message("a"), Message("b")}, want: "the following errors occurred: [a, b]"},
+		{err: nil, errs: []error{Message("a"), Message("b")}, want: "[a, b]"},
 		{err: nil, errs: []error{nil, Message("a")}, want: "a"},
-		{err: Message("a"), errs: []error{Message("b"), Message("c")}, want: "the following errors occurred: [a, b, c]"},
+		{err: Message("a"), errs: []error{Message("b"), Message("c")}, want: "[a, b, c]"},
 		{err: Message("a"), errs: nil, want: "a"},
-		{err: multiError{Message("a"), Message("b")}, errs: nil, want: "the following errors occurred: [a, b]"},
-		{err: multiError{Message("a"), Message("b")}, errs: []error{Message("c")}, want: "the following errors occurred: [a, b, c]"},
+		{err: multiError{Message("a"), Message("b")}, errs: nil, want: "[a, b]"},
+		{err: multiError{Message("a"), Message("b")}, errs: []error{Message("c")}, want: "[a, b, c]"},
 		{err: multiError{}, errs: []error{Message("a"), nil}, want: "a"},
 		{err: nil, errs: nil, wantNil: true},
 		{err: nil, errs: []error{nil, nil}, wantNil: true},
@@ -69,7 +69,7 @@ func TestMultiError_ErrorDetails(t *testing.T) {
 		{errs: []error{}, want: ``},
 		{errs: []error{Message("a")}, want: "1. Error: a\n"},
 		{errs: []error{Message("a"), Message("b")}, want: "1. Error: a\n2. Error: b\n"},
-		{errs: []error{Message("a"), multiError{Message("b"), Message("c")}}, want: "1. Error: a\n2. Error: the following errors occurred: [b, c]\n\t1. Error: b\n\t2. Error: c\n"},
+		{errs: []error{Message("a"), multiError{Message("b"), Message("c")}}, want: "1. Error: a\n2. Error: [b, c]\n\t1. Error: b\n\t2. Error: c\n"},
 	}
 	for n, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", n+1), func(t *testing.T) {

@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-const multiErrorPrefix = "the following errors occurred:"
-
 // Append appends the provided errors to an existing error or list of
 // errors. If `err` is not a [multiError], it will be converted into
 // one. Nil errors are ignored. It does not record a stack trace.
@@ -57,8 +55,7 @@ type multiError []error
 // Error implements the [error] interface.
 func (e multiError) Error() string {
 	var s strings.Builder
-	s.WriteString(multiErrorPrefix)
-	s.WriteString(" [")
+	s.WriteString("[")
 	for n, err := range e {
 		s.WriteString(err.Error())
 		if n < len(e)-1 {
