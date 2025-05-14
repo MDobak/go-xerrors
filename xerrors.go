@@ -173,6 +173,12 @@ func Joinf(format string, args ...any) error {
 			wErr.msg = err.Error()
 			return wErr
 		}
+		// Edge case: if multiple %w verbs are used, and all of them are nil.
+		if wErr == nil {
+			return err
+		}
+		// Edge case: if multiple %w verbs are used, and only one of them is
+		// not nil.
 		return &withWrapper{
 			err: wErr,
 			msg: err.Error(),

@@ -192,6 +192,7 @@ func TestJoinf(t *testing.T) {
 		{format: "simple error", args: nil, want: "simple error"},
 		{format: "error with value %d", args: []any{42}, want: "error with value 42"},
 		{format: "wrapped error: %w", args: []any{err}, want: "wrapped error: first error"},
+		{format: "wrapped nil error: %w", args: []any{nil}, want: "wrapped nil error: %!w(<nil>)"},
 	}
 	for n, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", n+1), func(t *testing.T) {

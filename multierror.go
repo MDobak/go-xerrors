@@ -23,14 +23,10 @@ import (
 func Append(err error, errs ...error) error {
 	var me multiError
 	if err != nil {
-		if merr, ok := err.(multiError); ok {
-			for _, e := range merr {
-				if e != nil {
-					me = append(me, e)
-				}
-			}
+		if mErr, ok := err.(multiError); ok {
+			me = mErr
 		} else {
-			me = append(me, err)
+			me = multiError{err}
 		}
 	}
 	for _, e := range errs {

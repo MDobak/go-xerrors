@@ -18,6 +18,9 @@ func TestJoinf_Go120(t *testing.T) {
 		want   string
 	}{
 		{format: "multiple errors: %w: %w", args: []any{err1, err2}, want: "multiple errors: first error: second error"},
+		{format: "wrapped multiple nil errors: %w %w", args: []any{nil, nil}, want: "wrapped multiple nil errors: %!w(<nil>) %!w(<nil>)"},
+		{format: "first error nil: %w %w", args: []any{nil, err2}, want: "first error nil: %!w(<nil>) second error"},
+		{format: "second error nil: %w %w", args: []any{err1, nil}, want: "second error nil: first error %!w(<nil>)"},
 	}
 	for n, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", n+1), func(t *testing.T) {
