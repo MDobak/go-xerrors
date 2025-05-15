@@ -5,53 +5,64 @@ import (
 	"strings"
 )
 
-// WithWrapper wraps err with wrapper.
-//
-// The error used as wrapper should be a simple error, preferably a sentinel
-// error. This is because details such as the wrapper's stack trace are ignored.
-//
-// The Unwrap method will unwrap only err but errors.Is, errors.As works with
-// both of the errors.
-//
-// If wrapper is nil, then err is returned.
-// If err is nil, then nil is returned.
-func WithWrapper(wrapper error, err error) error {
-	if err == nil {
-		return nil
-	}
-	if wrapper == nil {
-		return err
-	}
-	return &withWrapper{
-		wrapper: wrapper,
-		err:     err,
-	}
-}
-
 // withWrapper wraps an error with another error.
+//
+// It is intended to be build error chains, e.g. if we have a
+// following error chain: `err1: err2: err3`, the wrapper is `err1`,
+// and the err is another withWrapper containing `err2` and `err3`.
 type withWrapper struct {
-	wrapper error
-	err     error
+	wrapper error  // wrapper is the error that wraps the next error in the chain, may be nil
+	err     error  // err is the next error in the chain, must not be nil
+	msg     string // msg overwrites the error message, if set
 }
 
-// Error implements the error interface.
+// Error implements the [error] interface.
 func (e *withWrapper) Error() string {
+	if e.msg != "" {
+		return e.msg
+	}
 	s := &strings.Builder{}
-	s.WriteString(e.wrapper.Error())
-	s.WriteString(": ")
+	if e.wrapper != nil {
+		s.WriteString(e.wrapper.Error())
+		s.WriteString(": ")
+	}
 	s.WriteString(e.err.Error())
 	return s.String()
 }
 
-// Unwrap implements the Wrapper interface.
+// ErrorDetails implements the [DetailedError] interface.
+func (e *withWrapper) ErrorDetails() string {
+	err := e.wrapper
+	for err != nil {
+		if dErr, ok := err.(DetailedError); ok {
+			return dErr.ErrorDetails()
+		}
+		if wErr, ok := err.(interface{ Unwrap() error }); ok {
+			err = wErr.Unwrap()
+			continue
+		}
+		break
+	}
+	return ""
+}
+
+// Unwrap implements the Go 1.13 `Unwrap() error` method, returning
+// the wrapped error.
+//
+// Since withWrapper represents a chain of errors, the Unwrap method
+// returns the next error in the chain, not both the wrapper and the error.
 func (e *withWrapper) Unwrap() error {
 	return e.err
 }
 
-func (e *withWrapper) As(target interface{}) bool {
+// As implements the Go 1.13 `errors.As` method, allowing type
+// assertions on all errors in the list.
+func (e *withWrapper) As(target any) bool {
 	return errors.As(e.wrapper, target) || errors.As(e.err, target)
 }
 
+// Is implements the Go 1.13 `errors.Is` method, allowing
+// comparisons with all errors in the list.
 func (e *withWrapper) Is(target error) bool {
 	return errors.Is(e.wrapper, target) || errors.Is(e.err, target)
 }

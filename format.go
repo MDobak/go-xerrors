@@ -1,7 +1,6 @@
 package xerrors
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -11,76 +10,93 @@ import (
 
 var errWriter io.Writer = os.Stderr
 
-// Print formats an error and prints it on stderr.
+// Print writes a formatted error to stderr.
 //
-// If the error implements the DetailedError interface, the result from the
-// ErrorDetails method is used for each wrapped error, otherwise the standard
-// Error method is used. A formatted error can be multi-line and always ends
-// with a newline.
+// If the error implements the [DetailedError] interface and returns
+// a non-empty string, the returned details are added to each error
+// in the chain.
+//
+// The formatted error can span multiple lines and always ends with
+// a newline.
 func Print(err error) {
-	fprint(errWriter, err)
+	buf := &strings.Builder{}
+	writeErr(buf, err)
+	errWriter.Write([]byte(buf.String()))
 }
 
-// Sprint formats an error and returns it as a string.
+// Sprint returns a formatted error as a string.
 //
-// If the error implements the DetailedError interface, the result from the
-// ErrorDetails method is used for each wrapped error, otherwise the standard
-// Error method is used. A formatted error can be multi-line and always ends
-// with a newline.
+// If the error implements the [DetailedError] interface and returns
+// a non-empty string, the returned details are added to each error
+// in the chain.
+//
+// The formatted error can span multiple lines and always ends with
+// a newline.
 func Sprint(err error) string {
-	s := &strings.Builder{}
-	fprint(s, err)
-	return s.String()
+	buf := &strings.Builder{}
+	writeErr(buf, err)
+	return buf.String()
 }
 
-// Fprint formats an error and writes it to the given writer.
+// Fprint writes a formatted error to the provided [io.Writer].
 //
-// If the error implements the DetailedError interface, the result from the
-// ErrorDetails method is used for each wrapped error, otherwise the standard
-// Error method is used. A formatted error can be multi-line and always ends
-// with a newline.
+// If the error implements the [DetailedError] interface and returns
+// a non-empty string, the returned details are added to each error
+// in the chain.
+//
+// The formatted error can span multiple lines and always ends with
+// a newline.
 func Fprint(w io.Writer, err error) (int, error) {
-	return fprint(w, err)
+	buf := &strings.Builder{}
+	writeErr(buf, err)
+	return w.Write([]byte(buf.String()))
 }
 
-func fprint(w io.Writer, e error) (n int, err error) {
+// writeErr writes a formatted error to the provided strings.Builder.
+func writeErr(buf *strings.Builder, err error) {
 	const firstErrorPrefix = "Error: "
 	const previousErrorPrefix = "Previous error: "
-	b := &bytes.Buffer{}
-	f := true
-	for e != nil {
-		switch terr := e.(type) {
-		case DetailedError:
-			if f {
-				b.WriteString(firstErrorPrefix)
+	first := true
+	for err != nil {
+		errMsg := err.Error()
+		errDetails := ""
+		if dErr, ok := err.(DetailedError); ok {
+			errDetails = dErr.ErrorDetails()
+		}
+		if errDetails != "" {
+			if first {
+				buf.WriteString(firstErrorPrefix)
 			} else {
-				b.WriteString(previousErrorPrefix)
+				buf.WriteString(previousErrorPrefix)
 			}
-			b.WriteString(terr.Error())
-			b.WriteByte('\n')
-			b.WriteString(terr.ErrorDetails())
-		default:
-			// If an error does not implement the DetailedError interface,
-			// then the Error() method will print all errors separated
-			// with ":", so there is no need to render each error other than
-			// the first one.
-			if f {
-				b.WriteString(firstErrorPrefix)
-				b.WriteString(terr.Error())
-				b.WriteByte('\n')
+			buf.WriteString(errMsg)
+			buf.WriteString("\n\t")
+			buf.WriteString(indent(errDetails))
+			if !strings.HasSuffix(errDetails, "\n") {
+				buf.WriteByte('\n')
+			}
+		} else {
+			// If an error does not contain any details, do not print
+			// it, except for the first one. This is to avoid printing
+			// every wrapped error on a single line.
+			if first {
+				buf.WriteString(firstErrorPrefix)
+				buf.WriteString(errMsg)
+				buf.WriteByte('\n')
 			}
 		}
-		f = false
-		if we, ok := e.(Wrapper); ok {
-			e = we.Unwrap()
+		first = false
+		if wErr, ok := err.(interface{ Unwrap() error }); ok {
+			err = wErr.Unwrap()
 			continue
 		}
 		break
 	}
-	return w.Write(b.Bytes())
 }
 
-func format(s fmt.State, verb rune, v interface{}) {
+// format is a helper function that formats a value according to the provided
+// format state and verb.
+func format(s fmt.State, verb rune, v any) {
 	f := []rune{'%'}
 	for _, c := range []int{'-', '+', '#', ' ', '0'} {
 		if s.Flag(c) {
@@ -96,4 +112,17 @@ func format(s fmt.State, verb rune, v interface{}) {
 	}
 	f = append(f, verb)
 	fmt.Fprintf(s, string(f), v)
+}
+
+// indent indents every line, except the first one, with a tab.
+func indent(s string) string {
+	nl := strings.HasSuffix(s, "\n")
+	if nl {
+		s = s[:len(s)-1]
+	}
+	s = strings.ReplaceAll(s, "\n", "\n\t")
+	if nl {
+		s += "\n"
+	}
+	return s
 }

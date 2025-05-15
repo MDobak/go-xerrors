@@ -33,19 +33,16 @@ func TestFormat(t *testing.T) {
 			err: Message("foo"), want: "Error: foo\n",
 		},
 		{
-			err: WithWrapper(Message("foo"), Message("bar")), want: "Error: foo: bar\n",
-		},
-		{
 			err:  testErr{err: "err", details: "details"},
-			want: "Error: err\ndetails\n",
+			want: "Error: err\n\tdetails\n",
 		},
 		{
 			err:  testErr{err: "err", details: "details", wrapped: Message("wrapped")},
-			want: "Error: err\ndetails\n",
+			want: "Error: err\n\tdetails\n",
 		},
 		{
 			err:  testErr{err: "err", details: "details", wrapped: testErr{err: "wrapped err", details: "wrapped details"}},
-			want: "Error: err\ndetails\nPrevious error: wrapped err\nwrapped details\n",
+			want: "Error: err\n\tdetails\nPrevious error: wrapped err\n\twrapped details\n",
 		},
 	}
 	for n, tt := range tests {
@@ -73,7 +70,7 @@ func TestPrint(t *testing.T) {
 }
 
 func TestSprint(t *testing.T) {
-	a := New("access denided")
+	a := New("access denied")
 	Print(a)
 
 	err := Message("foo")

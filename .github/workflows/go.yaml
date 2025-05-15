@@ -2,22 +2,22 @@ name: Go
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ master ]
+    tags: [ 'v*' ]
   pull_request:
-    branches: [ "master" ]
 
 jobs:
   CI:
     strategy:
       matrix:
-        go_version: [ "1.13.x", "1.18.x" ]
+        go_version: [ "1.18.x", "1.24.x" ]
 
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
 
       - name: "Set up Go"
-        uses: "actions/setup-go@v3"
+        uses: "actions/setup-go@v5"
         with:
           go-version: ${{ matrix.go_version }}
 
@@ -28,7 +28,22 @@ jobs:
         run: "go test -v ./..."
 
       - name: "Linter"
-        uses: "golangci/golangci-lint-action@v3"
+        uses: "golangci/golangci-lint-action@v7"
         with:
-          version: "v1.48"
+          version: "v2.0"
 
+  Release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false

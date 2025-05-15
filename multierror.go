@@ -6,59 +6,51 @@ import (
 	"strings"
 )
 
-// Append adds more errors to an existing list of errors. If err is not a list
-// of errors, then it will be converted into a list. Nil errors are ignored.
-// It does not record a stack trace.
+// Append appends the provided errors to an existing error or list of
+// errors. If `err` is not a [multiError], it will be converted into
+// one. Nil errors are ignored. It does not record a stack trace.
 //
-// If the list is empty, nil is returned. If the list contains only one error,
-// that error is returned instead of list.
+// If the resulting error list is empty, nil is returned. If the
+// resulting error list contains only one error, that error is
+// returned instead of the list.
 //
-// The returned list of errors is compatible with Go 1.13 errors, and it
-// supports the errors.Is and errors.As methods. However, the errors.Unwrap
-// method is not supported.
+// The returned error is compatible with Go errors, supporting
+// [errors.Is], [errors.As], and the Go 1.20 `Unwrap() []error`
+// method.
 //
-// Append is not thread-safe.
+// To create a chained error, use [New], [Newf], [Join], or
+// [Joinf] instead.
 func Append(err error, errs ...error) error {
-	if err == nil && len(errs) == 0 {
-		return nil
-	}
-	switch errTyp := err.(type) {
-	case multiError:
-		for _, e := range errs {
-			if e != nil {
-				errTyp = append(errTyp, e)
-			}
-		}
-		return errTyp
-	default:
-		var me multiError
-		if err != nil {
+	var me multiError
+	if err != nil {
+		if mErr, ok := err.(multiError); ok {
+			me = mErr
+		} else {
 			me = multiError{err}
 		}
-		for _, e := range errs {
-			if e != nil {
-				me = append(me, e)
-			}
+	}
+	for _, e := range errs {
+		if e != nil {
+			me = append(me, e)
 		}
-		if len(me) == 1 {
-			return me[0]
-		}
-		if len(me) == 0 {
-			return nil
-		}
+	}
+	switch len(me) {
+	case 0:
+		return nil
+	case 1:
+		return me[0]
+	default:
 		return me
 	}
 }
 
-const multiErrorErrorPrefix = "the following errors occurred: "
-
-// multiError is a slice of errors that can be used as a single error.
+// multiError is a slice of errors that can be treated as a single
+// error.
 type multiError []error
 
-// Error implements the error interface.
+// Error implements the [error] interface.
 func (e multiError) Error() string {
-	s := &strings.Builder{}
-	s.WriteString(multiErrorErrorPrefix)
+	var s strings.Builder
 	s.WriteString("[")
 	for n, err := range e {
 		s.WriteString(err.Error())
@@ -70,25 +62,32 @@ func (e multiError) Error() string {
 	return s.String()
 }
 
-// ErrorDetails implements the DetailedError interface.
+// ErrorDetails returns additional details about the error for
+// the [ErrorDetails] function.
 func (e multiError) ErrorDetails() string {
-	s := &strings.Builder{}
-	for n, err := range e.Errors() {
-		s.WriteString(strconv.Itoa(n + 1))
-		s.WriteString(". ")
-		s.WriteString(indent(Sprint(err)))
+	if len(e) == 0 {
+		return ""
 	}
-	return s.String()
+	buf := &strings.Builder{}
+	for n, err := range e.Unwrap() {
+		buf.WriteString(strconv.Itoa(n + 1))
+		buf.WriteString(". ")
+		writeErr(buf, err)
+	}
+	return buf.String()
 }
 
-// Errors implements the MultiError interface.
-func (e multiError) Errors() []error {
+// Unwrap implements the Go 1.20 `Unwrap() []error` method, returning
+// a slice containing all errors in the list.
+func (e multiError) Unwrap() []error {
 	s := make([]error, len(e))
 	copy(s, e)
 	return s
 }
 
-func (e multiError) As(target interface{}) bool {
+// As implements the Go 1.13 `errors.As` method, allowing type
+// assertions on all errors in the list.
+func (e multiError) As(target any) bool {
 	for _, err := range e {
 		if errors.As(err, target) {
 			return true
@@ -97,6 +96,8 @@ func (e multiError) As(target interface{}) bool {
 	return false
 }
 
+// Is implements the Go 1.13 `errors.Is` method, allowing
+// comparisons with all errors in the list.
 func (e multiError) Is(target error) bool {
 	for _, err := range e {
 		if errors.Is(err, target) {
@@ -104,14 +105,4 @@ func (e multiError) Is(target error) bool {
 		}
 	}
 	return false
-}
-
-// indent idents every line, except the first one, with tab.
-func indent(s string) string {
-	end := ""
-	if strings.HasSuffix(s, "\n") {
-		end = "\n"
-		s = s[:len(s)-1]
-	}
-	return strings.ReplaceAll(s, "\n", "\n\t") + end
 }
