@@ -85,16 +85,16 @@ func TestFrameFormat(t *testing.T) {
 		want   string
 		regexp bool
 	}{
-		{format: "%s", want: "\tat function (file:42)"},
+		{format: "%s", want: "function (file:42)"},
 		{format: "%f", want: "file"},
 		{format: "%d", want: "42"},
 		{format: "%n", want: "function"},
 		{format: "%+n", want: "package/function"},
 		{format: "%+n", want: "package/function"},
-		{format: "%v", want: "\tat function (file:42)"},
+		{format: "%v", want: "function (file:42)"},
 		{format: "%+v", want: "{File:file Line:42 Function:package/function}"},
 		{format: "%#v", want: "xerrors._Frame{File:\"file\", Line:42, Function:\"package/function\"}"},
-		{format: "%q", want: "\"\\tat function (file:42)\""},
+		{format: "%q", want: "\"function (file:42)\""},
 	}
 	for n, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", n+1), func(t *testing.T) {
@@ -111,11 +111,11 @@ func TestCallersFormat(t *testing.T) {
 		format string
 		want   string
 	}{
-		{format: "%s", want: `^\tat .*(\n\tat .*)+\n$`},
-		{format: "%v", want: `^\tat .*(\n\tat .*)+\n$`},
+		{format: "%s", want: `^at .*(\nat .*)+\n$`},
+		{format: "%v", want: `^at .*(\nat .*)+\n$`},
 		{format: "%+v", want: `\[([0-9 ])+\]`},
 		{format: "%#v", want: `^xerrors\._Callers\{(0x[a-f0-9]+, )*(0x[a-f0-9]+)\}$`},
-		{format: "%q", want: `^"\\tat .*(\\n\\tat .*)+\\n"$`},
+		{format: "%q", want: `^"at .*(\\nat .*)+\\n"$`},
 	}
 	for n, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", n+1), func(t *testing.T) {

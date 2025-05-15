@@ -16,11 +16,11 @@ const stackTraceDepth = 128
 func StackTrace(err error) Callers {
 	var callers Callers
 	for err != nil {
-		if e, ok := err.(interface{ StackTrace() Callers }); ok {
-			callers = e.StackTrace()
+		if st, ok := err.(interface{ StackTrace() Callers }); ok {
+			callers = st.StackTrace()
 		}
-		if e, ok := err.(interface{ Unwrap() error }); ok {
-			err = e.Unwrap()
+		if wErr, ok := err.(interface{ Unwrap() error }); ok {
+			err = wErr.Unwrap()
 			continue
 		}
 		break
@@ -127,7 +127,6 @@ func (f Frame) Format(s fmt.State, verb rune) {
 
 // writeFrame writes a formatted stack frame to the given [io.Writer].
 func (f Frame) writeFrame(w io.Writer) {
-	io.WriteString(w, "\tat ")
 	io.WriteString(w, shortname(f.Function))
 	io.WriteString(w, " (")
 	io.WriteString(w, f.File)
@@ -195,8 +194,8 @@ func (c Callers) Format(s fmt.State, verb rune) {
 
 // writeTrace writes the stack trace to the provided [io.Writer].
 func (c Callers) writeTrace(w io.Writer) {
-	frames := c.Frames()
-	for _, frame := range frames {
+	for _, frame := range c.Frames() {
+		io.WriteString(w, "at ")
 		frame.writeFrame(w)
 		io.WriteString(w, "\n")
 	}

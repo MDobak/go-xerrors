@@ -32,8 +32,16 @@ func (e *withWrapper) Error() string {
 
 // ErrorDetails implements the [DetailedError] interface.
 func (e *withWrapper) ErrorDetails() string {
-	if dErr, ok := e.wrapper.(DetailedError); ok {
-		return dErr.ErrorDetails()
+	err := e.wrapper
+	for err != nil {
+		if dErr, ok := err.(DetailedError); ok {
+			return dErr.ErrorDetails()
+		}
+		if wErr, ok := err.(interface{ Unwrap() error }); ok {
+			err = wErr.Unwrap()
+			continue
+		}
+		break
 	}
 	return ""
 }

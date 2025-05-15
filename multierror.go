@@ -62,18 +62,19 @@ func (e multiError) Error() string {
 	return s.String()
 }
 
-// ErrorDetails implements the [DetailedError] interface.
+// ErrorDetails returns additional details about the error for
+// the [ErrorDetails] function.
 func (e multiError) ErrorDetails() string {
 	if len(e) == 0 {
 		return ""
 	}
-	var s strings.Builder
+	buf := &strings.Builder{}
 	for n, err := range e.Unwrap() {
-		s.WriteString(strconv.Itoa(n + 1))
-		s.WriteString(". ")
-		s.WriteString(indent(Sprint(err)))
+		buf.WriteString(strconv.Itoa(n + 1))
+		buf.WriteString(". ")
+		writeErr(buf, err)
 	}
-	return s.String()
+	return buf.String()
 }
 
 // Unwrap implements the Go 1.20 `Unwrap() []error` method, returning
@@ -104,17 +105,4 @@ func (e multiError) Is(target error) bool {
 		}
 	}
 	return false
-}
-
-// indent indents every line, except the first one, with a tab.
-func indent(s string) string {
-	nl := strings.HasSuffix(s, "\n")
-	if nl {
-		s = s[:len(s)-1]
-	}
-	s = strings.ReplaceAll(s, "\n", "\n\t")
-	if nl {
-		s += "\n"
-	}
-	return s
 }

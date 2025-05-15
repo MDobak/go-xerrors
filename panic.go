@@ -10,7 +10,7 @@ import (
 type PanicError interface {
 	error
 
-	// Panic returns the value that caused the panic.
+	// Panic returns the raw panic value.
 	Panic() any
 }
 
@@ -60,12 +60,4 @@ func (e *panicError) Panic() any {
 // Error implements the [error] interface.
 func (e *panicError) Error() string {
 	return fmt.Sprintf("panic: %v", e.panic)
-}
-
-// ErrorDetails implements the [DetailedError] interface.
-func (e *panicError) ErrorDetails() string {
-	if dErr, ok := e.panic.(DetailedError); ok {
-		return dErr.ErrorDetails()
-	}
-	return ""
 }
