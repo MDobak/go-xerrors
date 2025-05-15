@@ -1,9 +1,10 @@
 # go-xerrors
 
-`go-xerrors` is an idiomatic, lightweight Go package designed to enhance error handling in Go applications. It provides functions and types that simplify common error handling tasks by adding support for stack traces, combining multiple errors, and simplifying work with panics. `go-xerrors` maintains full compatibility with Go's standard error handling features (including changes in Go 1.13 and 1.20), such as `errors.As`, `errors.Is`, and `errors.Unwrap`.
+`go-xerrors` is a simple, idiomatic, lightweight Go package designed to enhance error handling in Go applications. It provides functions and types that simplify common error handling tasks by adding support for stack traces, combining multiple errors, and simplifying work with panics. `go-xerrors` maintains full compatibility with Go's standard error handling features (including changes in Go 1.13 and 1.20), such as `errors.As`, `errors.Is`, and `errors.Unwrap`.
 
 **Main Features:**
 
+- **Simple and Lightweight**: Designed with simplicity in mind, the library has a small codebase with no external dependencies, making it easy to understand and integrate into any Go project.
 - **Stack Traces**: Automatically captures and attaches stack traces to errors upon creation, which significantly aids debugging and helps pinpoint the origin of issues.
 - **Multi-Errors**: Enables the aggregation of multiple errors into a single error instance, useful for reporting all failures from operations that involve multiple steps or components.
 - **Flexible Error Wrapping**: Provides ways to wrap errors with additional context or messages, while preserving the ability to inspect each underlying error individually.
@@ -62,9 +63,9 @@ fmt.Print(trace)
 Output:
 
 ```
-	at main.TestMain (/home/user/app/main_test.go:10)
-	at testing.tRunner (/home/user/go/src/testing/testing.go:1259)
-	at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1133)
+at main.TestMain (/home/user/app/main_test.go:10)
+at testing.tRunner (/home/user/go/src/testing/testing.go:1259)
+at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1133)
 ```
 
 You can also explicitly add a stack trace to an existing error:
@@ -76,7 +77,7 @@ errWithStack := xerrors.WithStackTrace(err, 0) // 0 skips no frames
 
 ### Wrapping Errors
 
-The `xerrors.New` and `xerrors.Newf` functions can also wrap existing errors while preserving their stack traces:
+The `xerrors.New` and `xerrors.Newf` functions can also wrap existing errors:
 
 ```go
 output, err := json.Marshal(data)
@@ -94,19 +95,29 @@ if err != nil {
 }
 ```
 
+Note that wrapping multiple errors with `xerrors.Newf` is possible on Go 1.20 and later.
+
 ### Creating Error Chains Without Stack Traces
 
 For situations where you don't need a stack trace (such as creating sentinel errors), use `xerrors.Join` and `xerrors.Joinf`:
 
 ```go
-err := xerrors.Join("operation failed", existingError)
+err := xerrors.Join("operation failed", otherErr)
 ```
 
-The key difference between `fmt.Errorf` and `xerrors.Newf`/`xerrors.Joinf` is that the latter functions preserve the error chain, whereas `fmt.Errorf` flattens it (i.e., its `Unwrap` method returns all underlying errors at once, instead of just the next one in the chain).
+With formatted messages:
+
+```go
+err := xerrors.Joinf("operation failed: %w", otherErr)
+```
+
+Note that wrapping multiple errors with `xerrors.Joinf` is possible on Go 1.20 and later.
+
+The main difference between Go's `fmt.Errorf` and `xerrors.Newf`/`xerrors.Joinf` is that the latter functions preserve the error chain, whereas `fmt.Errorf` flattens it (i.e., its `Unwrap` method returns all underlying errors at once instead of just the next one in the chain).
 
 ### Sentinel Errors
 
-Sentinel errors are predefined error values representing specific, known failure conditions. `go-xerrors` provides `xerrors.Message` to create distinct sentinel error values with consistent messages:
+Sentinel errors are predefined error values representing specific, known failure conditions. `go-xerrors` provides `xerrors.Message` to create distinct sentinel error values:
 
 ```go
 var ErrAccessDenied = xerrors.Message("access denied")
@@ -186,7 +197,6 @@ func handleTask() (err error) {
 	})
 
 	// ... potentially panicking code ...
-	panic("task failed")
 
 	return nil
 }
@@ -204,7 +214,6 @@ func handleTask() (err error) {
 	}()
 
 	// ... potentially panicking code ...
-	panic("task failed")
 
 	return nil
 }
