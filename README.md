@@ -1,14 +1,14 @@
 # go-xerrors
 
-`go-xerrors` is a simple, idiomatic, lightweight Go package designed to enhance error handling in Go applications. It provides functions and types that simplify common error handling tasks by adding support for stack traces, combining multiple errors, and simplifying work with panics. `go-xerrors` maintains full compatibility with Go's standard error handling features (including changes in Go 1.13 and 1.20), such as `errors.As`, `errors.Is`, and `errors.Unwrap`.
+`go-xerrors` is a simple, idiomatic, lightweight Go package that provides utilities for error handling. It offers functions and types to support stack traces, multi-errors, and simplified panic handling. The package is compatible with Go's standard error handling mechanisms, such as `errors.As`, `errors.Is`, and `errors.Unwrap`, including features from Go 1.13 and 1.20.
 
 **Main Features:**
 
-- **Simple and Lightweight**: Designed with simplicity in mind, the library has a small codebase with no external dependencies, making it easy to understand and integrate into any Go project.
-- **Stack Traces**: Automatically captures and attaches stack traces to errors upon creation, which significantly aids debugging and helps pinpoint the origin of issues.
-- **Multi-Errors**: Enables the aggregation of multiple errors into a single error instance, useful for reporting all failures from operations that involve multiple steps or components.
-- **Flexible Error Wrapping**: Provides ways to wrap errors with additional context or messages, while preserving the ability to inspect each underlying error individually.
-- **Simplified Panic Handling**: Provides functions for converting recovered panic values into standard Go errors with stack traces, facilitating more robust error recovery logic.
+- **Stack Traces**: Captures stack traces when creating errors to help locate the origin of issues during debugging
+- **Multi-Errors**: Aggregates multiple errors into a single error instance while maintaining individual error context
+- **Error Wrapping**: Wraps errors with additional context while preserving compatibility with `errors.Is`, `errors.As`, and `errors.Unwrap`
+- **Panic Handling**: Converts panic values to standard Go errors with stack traces for structured error recovery
+- **Zero Dependencies**: Implements error handling utilities with no external dependencies beyond the Go standard library
 
 ---
 

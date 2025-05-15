@@ -1,8 +1,7 @@
-// Package xerrors is an idiomatic and lightweight Go package designed to
-// enhance error handling in Go applications. It provides functions and types
-// that simplify common error handling tasks by adding support for stack
-// traces, combining multiple errors, and simplifying working with panics.
-// The package maintains full compatibility with Go's standard error handling
-// features (including changes in Go 1.13 and 1.20), such as errors.As,
-// errors.Is, and errors.Unwrap.
+// Package go-xerrors is a simple, idiomatic, lightweight Go package that
+// provides utilities for error handling. It offers functions and types to
+// support stack traces, multi-errors, and simplified panic handling. The
+// package is compatible with Go's standard error handling mechanisms, such
+// as errors.As, errors.Is, and errors.Unwrap, including features from Go
+// 1.13 and 1.20.
 package xerrors
