@@ -1,5 +1,7 @@
 # go-xerrors
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/mdobak/go-xerrors.svg)](https://pkg.go.dev/github.com/mdobak/go-xerrors) [![Go Report Card](https://goreportcard.com/badge/github.com/mdobak/go-xerrors)](https://goreportcard.com/report/github.com/mdobak/go-xerrors) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 `go-xerrors` is a simple, idiomatic, lightweight Go package that provides utilities for error handling. It offers functions and types to support stack traces, multi-errors, and simplified panic handling. The package is compatible with Go's standard error handling mechanisms, such as `errors.As`, `errors.Is`, and `errors.Unwrap`, including features from Go 1.13 and 1.20.
 
 **Main Features:**
@@ -19,6 +21,49 @@ go get -u github.com/mdobak/go-xerrors
 ```
 
 ## Usage
+
+### Example
+
+The following example demonstrates the basic usage of `go-xerrors` for creating and handling errors.
+
+```go
+package main
+
+import (
+    "database/sql"
+    "fmt"
+
+    "github.com/mdobak/go-xerrors"
+)
+
+func findUserByID(id int) error {
+    // Simulate a standard library error.
+    err := sql.ErrNoRows
+
+    // Wrap the original error with additional context and capture a stack trace
+    // at this point in the call stack.
+    return xerrors.Newf("user %d not found: %w", id, err)
+}
+
+func main() {
+    err := findUserByID(123)
+    if err != nil {
+        // 1. The standard Error() method provides a concise, log-friendly message.
+        fmt.Println("Concise log message:", err.Error())
+        // Output: user 123 not found: sql: no rows in result set
+
+        // 2. xerrors.Print provides a rich, multi-line report for developers,
+        // including the stack trace from where the error was wrapped.
+        xerrors.Print(err)
+        // Output:
+        // Error: user 123 not found: sql: no rows in result set
+        //     at main.findUserByID (/home/user/app/main.go:15)
+        //     at main.main (/home/user/app/main.go:20)
+        //     at runtime.main (/usr/local/go/src/runtime/proc.go:250)
+        //     at runtime.goexit (/usr/local/go/src/runtime/asm_amd64.s:1594)
+    }
+}
+```
 
 ### Creating Errors with Stack Traces
 
@@ -53,7 +98,7 @@ Error: something went wrong
 
 ### Working with Stack Traces
 
-To retrieve only the stack trace information programmatically:
+To retrieve the stack trace information programmatically:
 
 ```go
 trace := xerrors.StackTrace(err)
@@ -95,7 +140,7 @@ if err != nil {
 }
 ```
 
-Note that wrapping multiple errors with `xerrors.Newf` is possible on Go 1.20 and later.
+Note that wrapping multiple errors with `xerrors.Newf` is possible only in Go 1.20 and later.
 
 ### Creating Error Chains Without Stack Traces
 
@@ -111,13 +156,13 @@ With formatted messages:
 err := xerrors.Joinf("operation failed: %w", otherErr)
 ```
 
-Note that wrapping multiple errors with `xerrors.Joinf` is possible on Go 1.20 and later.
+Note that wrapping multiple errors with `xerrors.Joinf` is possible only in Go 1.20 and later.
 
 The main difference between Go's `fmt.Errorf` and `xerrors.Newf`/`xerrors.Joinf` is that the latter functions preserve the error chain, whereas `fmt.Errorf` flattens it (i.e., its `Unwrap` method returns all underlying errors at once instead of just the next one in the chain).
 
 ### Sentinel Errors
 
-Sentinel errors are predefined error values representing specific, known failure conditions. `go-xerrors` provides `xerrors.Message` to create distinct sentinel error values:
+Sentinel errors are predefined, exported error values used to signal specific, well-known conditions (e.g., `io.EOF`). The `go-xerrors` package provides the `xerrors.Message` and `xerrors.Messagef` functions to create distinct sentinel error values:
 
 ```go
 var ErrAccessDenied = xerrors.Message("access denied")
@@ -166,11 +211,11 @@ if err != nil {
     // Output:
     // Error: [username cannot be empty, password must be at least 8 characters]
     // 1. Error: username cannot be empty
-    // 	at main.validateInput (/path/to/your/file.go:XX)
-    // 	... stack trace ...
+    //     at main.validateInput (/path/to/your/file.go:XX)
+    //     ... stack trace ...
     // 2. Error: password must be at least 8 characters
-    // 	at main.validateInput (/path/to/your/file.go:YY)
-    // 	... stack trace ...
+    //     at main.validateInput (/path/to/your/file.go:YY)
+    //     ... stack trace ...
 }
 ```
 
@@ -178,13 +223,11 @@ The resulting multi-error implements the standard `error` interface as well as `
 
 **Comparison with Go 1.20 `errors.Join`:**
 
-Go 1.20 introduced `errors.Join` for error aggregation. While serving a similar purpose, `xerrors.Append` offers:
-
-1. **Individual Stack Traces**: Preserves the individual stack traces associated with each appended error
-2. **Enhanced Formatting**: Provides detailed, structured output for multi-errors
-3. **Consistent `Error()` Output**: Produces a concise, single-line summary
+Go 1.20 introduced `errors.Join` for error aggregation. While it serves a similar purpose, `xerrors.Append` preserves the individual stack traces associated with each appended error and adheres to the convention of returning a single line from the `Error()` method.
 
 ### Simplified Panic Handling
+
+Panics can be challenging to locate and handle effectively in Go applications, especially when using `recover()`. Common issues, such as nil pointer dereferences or out-of-bounds slice accesses, often result in unclear panic messages. Without a stack trace, pinpointing the origin of the panic can be difficult.
 
 `go-xerrors` provides utilities to convert panic values into proper errors with stack traces.
 
@@ -221,13 +264,13 @@ func handleTask() (err error) {
 
 The returned error implements the `PanicError` interface, which provides access to the original panic value via the `Panic()` method.
 
-### When to use `New`, `Join`, or `Append`
+### Choosing Between `New`, `Join`, and `Append`
 
-While all three functions can be used to aggregate errors, they serve different purposes:
+While these functions can all be used to aggregate errors, they each serve distinct purposes:
 
-- **`xerrors.New`**: Create errors with stack traces, useful for wrapping existing errors to add context
-- **`xerrors.Join`**: Create chained errors without stack traces, useful for defining sentinel errors
-- **`xerrors.Append`**: Create multi-errors by aggregating independent errors
+- **`xerrors.New`**: Use this to create errors and attach stack traces, especially when wrapping existing errors to provide additional context.
+- **`xerrors.Join`**: Use this to chain errors together _without_ capturing stack traces. This is most appropriate for creating sentinel errors.
+- **`xerrors.Append`**: Use this to aggregate multiple, independent errors into a single multi-error. This is useful when several operations might fail, and you want to report all failures at once.
 
 #### Examples
 
@@ -248,10 +291,10 @@ func (m *MyStruct) MarshalJSON() ([]byte, error) {
 
 ```go
 var (
-	// Using xerrors.Join lets us create sentinel errors that can be
+	// Using xerrors.Join allows us to create sentinel errors that can be
 	// checked with errors.Is against both ErrValidation and the
 	// specific validation error. We do not want to capture a stack trace
-	// here; hence, we use xerrors.Join instead of xerrors.New.
+	// here; therefore, we use xerrors.Join instead of xerrors.New.
 	ErrValidation   = xerrors.Message("validation error")
 	ErrInvalidName  = xerrors.Join(ErrValidation, "name is invalid")
 	ErrInvalidAge   = xerrors.Join(ErrValidation, "age is invalid")
@@ -300,28 +343,27 @@ func (m *MyStruct) Validate() error {
 - `xerrors.Joinf(format string, args ...any) error`: Creates a formatted chained error without a stack trace
 - `xerrors.Message(message string) error`: Creates a simple sentinel error
 - `xerrors.Messagef(format string, args ...any) error`: Creates a simple formatted sentinel error
-
-### Multi-Error Functions
-
 - `xerrors.Append(err error, errs ...error) error`: Aggregates errors into a multi-error
 
-### Panic Handling
+### Panics
 
 - `xerrors.Recover(callback func(err error))`: Recovers from panics and invokes a callback with the error
 - `xerrors.FromRecover(recoveredValue any) error`: Converts a recovered value to an error with a stack trace
 
-### Formatting Functions
+### Stack Trace
+
+- `xerrors.StackTrace(err error) Callers`: Extracts the stack trace from an error
+- `xerrors.WithStackTrace(err error, skip int) error`: Wraps an error with a stack trace
+- `DefaultCallersFormatter`: The default formatter for [Callers], used when printing stack traces.
+- `DefaultFrameFormatter`: The default formatter for [Frame], used when printing stack traces.
+
+### Error printing
 
 - `xerrors.Print(err error)`: Prints a formatted error to stderr
 - `xerrors.Sprint(err error) string`: Returns a formatted error as a string
 - `xerrors.Fprint(w io.Writer, err error)`: Writes a formatted error to the provided writer
 
-### Stack Trace Functions
-
-- `xerrors.StackTrace(err error) Callers`: Extracts the stack trace from an error
-- `xerrors.WithStackTrace(err error, skip int) error`: Wraps an error with a stack trace
-
-### Key Interfaces
+### Interfaces
 
 - `DetailedError`: For errors that provide detailed information
 - `PanicError`: For errors created from panic values with access to the original panic value
