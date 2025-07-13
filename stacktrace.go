@@ -8,6 +8,25 @@ import (
 	"strings"
 )
 
+// DefaultCallersFormatter is the default formatter for [Callers].
+var DefaultCallersFormatter = func(c Callers, w io.Writer) {
+	for _, frame := range c.Frames() {
+		io.WriteString(w, "at ")
+		frame.writeFrame(w)
+		io.WriteString(w, "\n")
+	}
+}
+
+// DefaultFrameFormatter is the default formatter for [Frame].
+var DefaultFrameFormatter = func(f Frame, w io.Writer) {
+	io.WriteString(w, shortname(f.Function))
+	io.WriteString(w, " (")
+	io.WriteString(w, f.File)
+	io.WriteString(w, ":")
+	io.WriteString(w, strconv.Itoa(f.Line))
+	io.WriteString(w, ")")
+}
+
 const stackTraceDepth = 128
 
 // StackTrace extracts the stack trace from the provided error.
@@ -127,12 +146,7 @@ func (f Frame) Format(s fmt.State, verb rune) {
 
 // writeFrame writes a formatted stack frame to the given [io.Writer].
 func (f Frame) writeFrame(w io.Writer) {
-	io.WriteString(w, shortname(f.Function))
-	io.WriteString(w, " (")
-	io.WriteString(w, f.File)
-	io.WriteString(w, ":")
-	io.WriteString(w, strconv.Itoa(f.Line))
-	io.WriteString(w, ")")
+	DefaultFrameFormatter(f, w)
 }
 
 // Callers represents a list of program counters from the
@@ -194,11 +208,7 @@ func (c Callers) Format(s fmt.State, verb rune) {
 
 // writeTrace writes the stack trace to the provided [io.Writer].
 func (c Callers) writeTrace(w io.Writer) {
-	for _, frame := range c.Frames() {
-		io.WriteString(w, "at ")
-		frame.writeFrame(w)
-		io.WriteString(w, "\n")
-	}
+	DefaultCallersFormatter(c, w)
 }
 
 // callers captures the current stack trace, skipping the specified
