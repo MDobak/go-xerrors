@@ -12,6 +12,8 @@
 - **Panic Handling**: Converts panic values to standard Go errors with stack traces for structured error recovery
 - **Zero Dependencies**: Implements error handling utilities with no external dependencies beyond the Go standard library
 
+> **Note:** This package is considered stable and will therefore be rarely updated, mostly for bug fixes and adding support for new Go versions and features. With the release of version 1.0, the API is frozen, and no breaking changes will be introduced in future releases.
+
 ---
 
 ## Installation
