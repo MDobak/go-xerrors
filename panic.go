@@ -7,6 +7,8 @@ import (
 // PanicError represents an error that occurs during a panic. It is
 // returned by the [Recover] and [FromRecover] functions. It provides
 // access to the original panic value via the [Panic] method.
+//
+// Use the standard [errors.As] function to convert an error to this interface.
 type PanicError interface {
 	error
 
@@ -16,11 +18,10 @@ type PanicError interface {
 
 // Recover wraps the built-in `recover()` function, converting the
 // recovered value into an error with a stack trace. The provided `fn`
-// callback is only invoked when a panic occurs. The error passed to
-// `fn` implements [PanicError].
+// callback is only invoked when a panic occurs.
 //
 // This function must always be used directly with the `defer`
-// keyword; otherwise, it will not function correctly.
+// keyword.
 func Recover(fn func(err error)) {
 	if r := recover(); r != nil {
 		fn(&withStackTrace{

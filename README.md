@@ -2,17 +2,16 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/mdobak/go-xerrors.svg)](https://pkg.go.dev/github.com/mdobak/go-xerrors) [![Go Report Card](https://goreportcard.com/badge/github.com/mdobak/go-xerrors)](https://goreportcard.com/report/github.com/mdobak/go-xerrors) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Coverage Status](https://coveralls.io/repos/github/MDobak/go-xerrors/badge.svg?branch=coverage)](https://coveralls.io/github/MDobak/go-xerrors?branch=coverage)
 
-`go-xerrors` is a simple, idiomatic, lightweight Go package that provides utilities for error handling. It offers functions and types to support stack traces, multi-errors, and simplified panic handling. The package is compatible with Go's standard error handling mechanisms, such as `errors.As`, `errors.Is`, and `errors.Unwrap`, including features from Go 1.13 and 1.20.
+`go-xerrors` is a small, idiomatic library that makes error handling in Go easier. It provides utilities for creating errors with stack traces, wrapping existing errors, aggregating multiple errors, and recovering from panics.
 
-**Main Features:**
+**Main features**
 
-- **Stack Traces**: Captures stack traces when creating errors to help locate the origin of issues during debugging
-- **Multi-Errors**: Aggregates multiple errors into a single error instance while maintaining individual error context
-- **Error Wrapping**: Wraps errors with additional context while preserving compatibility with `errors.Is`, `errors.As`, and `errors.Unwrap`
-- **Panic Handling**: Converts panic values to standard Go errors with stack traces for structured error recovery
-- **Zero Dependencies**: Implements error handling utilities with no external dependencies beyond the Go standard library
+- **Stack traces**: Capture stack traces when creating errors to pinpoint the source during debugging.
+- **Multi-errors**: Aggregate multiple errors into a single error while preserving individual context.
+- **Panic handling**: Convert panic values to standard Go errors with stack traces.
+- **Zero dependencies**: No external dependencies beyond the Go standard library.
 
-> **Note:** This package is considered stable and will therefore be rarely updated, mostly for bug fixes and adding support for new Go versions and features. With the release of version 1.0, the API is frozen, and no breaking changes will be introduced in future releases.
+> Note: This package is stable. Updates are rare and limited to bug fixes and support for new Go versions or error-related features. Since 1.0, the API has been frozen. No breaking changes will be introduced in future releases.
 
 ---
 
@@ -26,7 +25,7 @@ go get -u github.com/mdobak/go-xerrors
 
 ### Example
 
-The following example demonstrates the basic usage of `go-xerrors` for creating and handling errors.
+Here’s a quick example of creating and handling errors with `go-xerrors`.
 
 ```go
 package main
@@ -50,12 +49,12 @@ func findUserByID(id int) error {
 func main() {
     err := findUserByID(123)
     if err != nil {
-        // 1. The standard Error() method provides a concise, log-friendly message.
-        fmt.Println("Concise log message:", err.Error())
-        // Output: user 123 not found: sql: no rows in result set
+        // 1) err.Error() returns a concise, log-friendly message.
+        fmt.Println(err.Error())
+        // Output:
+        // user 123 not found: sql: no rows in result set
 
-        // 2. xerrors.Print provides a rich, multi-line report for developers,
-        // including the stack trace from where the error was wrapped.
+        // 2) xerrors.Print shows a detailed message with a stack trace.
         xerrors.Print(err)
         // Output:
         // Error: user 123 not found: sql: no rows in result set
@@ -72,18 +71,18 @@ func main() {
 The primary way to create an error in `go-xerrors` is by using the `xerrors.New` or `xerrors.Newf` functions:
 
 ```go
-// Create a new error with a stack trace
+// Create a new error with a stack trace.
 err := xerrors.New("something went wrong")
 
-// Create a formatted error with a stack trace
+// Create a formatted error with a stack trace.
 err := xerrors.Newf("something went wrong: %s", reason)
 ```
 
-Calling the standard `Error()` method on `err` returns only the message ("something went wrong"), adhering to the Go convention of providing a concise error description.
+Calling `err.Error()` returns only the message ("something went wrong"), following the Go convention of keeping error strings concise.
 
 ### Displaying Detailed Errors
 
-To display the error with the associated stack trace and additional details, use the `xerrors.Print`, `xerrors.Sprint`, or `xerrors.Fprint` functions:
+To print the error with its stack trace and details, use `xerrors.Print`, `xerrors.Sprint`, or `xerrors.Fprint`: 
 
 ```go
 xerrors.Print(err)
@@ -115,16 +114,17 @@ at testing.tRunner (/home/user/go/src/testing/testing.go:1259)
 at runtime.goexit (/home/user/go/src/runtime/asm_arm64.s:1133)
 ```
 
-You can also explicitly add a stack trace to an existing error:
+You can also add a stack trace to an existing error with `xerrors.WithStackTrace`, and choose how many frames to skip. This is handy when a helper creates errors but you don’t want its own frame captured:
 
 ```go
-err := someFunction()
-errWithStack := xerrors.WithStackTrace(err, 0) // 0 skips no frames
+func errNotFound(path string) error {
+	return xerrors.WithStackTrace(ErrNotFound{path: path}, 1) // skip one frame
+}
 ```
 
 ### Wrapping Errors
 
-The `xerrors.New` and `xerrors.Newf` functions can also wrap existing errors:
+You can also wrap existing errors:
 
 ```go
 output, err := json.Marshal(data)
@@ -142,11 +142,11 @@ if err != nil {
 }
 ```
 
-Note that wrapping multiple errors with `xerrors.Newf` is possible only in Go 1.20 and later.
+> Wrapping multiple errors with `xerrors.Newf` is possible only in Go 1.20 and later.
 
 ### Creating Error Chains Without Stack Traces
 
-For situations where you don't need a stack trace (such as creating sentinel errors), use `xerrors.Join` and `xerrors.Joinf`:
+When you don’t need a stack trace (for example, when creating sentinel errors), use `xerrors.Join` and `xerrors.Joinf`: 
 
 ```go
 err := xerrors.Join("operation failed", otherErr)
@@ -158,7 +158,7 @@ With formatted messages:
 err := xerrors.Joinf("operation failed: %w", otherErr)
 ```
 
-Note that wrapping multiple errors with `xerrors.Joinf` is possible only in Go 1.20 and later.
+> Wrapping multiple errors with `xerrors.Joinf` is possible only in Go 1.20 and later.
 
 The main difference between Go's `fmt.Errorf` and `xerrors.Newf`/`xerrors.Joinf` is that the latter functions preserve the error chain, whereas `fmt.Errorf` flattens it (i.e., its `Unwrap` method returns all underlying errors at once instead of just the next one in the chain).
 
@@ -206,18 +206,24 @@ if len(input.Password) < 8 {
 }
 
 if err != nil {
-    fmt.Println(err.Error()) // [username cannot be empty, password must be at least 8 characters]
+    fmt.Println(err.Error()) 
+	// Output:
+	// [username cannot be empty, password must be at least 8 characters]
 
     // Detailed output using xerrors.Print:
     xerrors.Print(err)
     // Output:
     // Error: [username cannot be empty, password must be at least 8 characters]
     // 1. Error: username cannot be empty
-    //     at main.validateInput (/path/to/your/file.go:XX)
-    //     ... stack trace ...
+    //     at main.validateInput (/home/user/app/main.go:40)
+    //     at main.main (/home/user/app/main.go:20)
+    //     at runtime.main (/usr/local/go/src/runtime/proc.go:250)
+    //     at runtime.goexit (/usr/local/go/src/runtime/asm_amd64.s:1594)
     // 2. Error: password must be at least 8 characters
-    //     at main.validateInput (/path/to/your/file.go:YY)
-    //     ... stack trace ...
+    //     at main.validateInput (/home/user/app/main.go:43)
+    //     at main.main (/home/user/app/main.go:20)
+    //     at runtime.main (/usr/local/go/src/runtime/proc.go:250)
+    //     at runtime.goexit (/usr/local/go/src/runtime/asm_amd64.s:1594)
 }
 ```
 
@@ -271,7 +277,7 @@ The returned error implements the `PanicError` interface, which provides access 
 While these functions can all be used to aggregate errors, they each serve distinct purposes:
 
 - **`xerrors.New`**: Use this to create errors and attach stack traces, especially when wrapping existing errors to provide additional context.
-- **`xerrors.Join`**: Use this to chain errors together _without_ capturing stack traces. This is most appropriate for creating sentinel errors.
+- **`xerrors.Join`**: Use this to chain errors together _without_ capturing stack traces.
 - **`xerrors.Append`**: Use this to aggregate multiple, independent errors into a single multi-error. This is useful when several operations might fail, and you want to report all failures at once.
 
 #### Examples
@@ -356,8 +362,8 @@ func (m *MyStruct) Validate() error {
 
 - `xerrors.StackTrace(err error) Callers`: Extracts the stack trace from an error
 - `xerrors.WithStackTrace(err error, skip int) error`: Wraps an error with a stack trace
-- `DefaultCallersFormatter`: The default formatter for [Callers], used when printing stack traces.
-- `DefaultFrameFormatter`: The default formatter for [Frame], used when printing stack traces.
+- `DefaultCallersFormatter`: The default formatter for Callers, used when printing stack traces.
+- `DefaultFrameFormatter`: The default formatter for Frame, used when printing stack traces.
 
 ### Error printing
 
@@ -372,7 +378,7 @@ func (m *MyStruct) Validate() error {
 
 ## Documentation
 
-For comprehensive details on all functions and types, please refer to the full documentation available at:
+For full API details, see the documentation:
 
 [https://pkg.go.dev/github.com/mdobak/go-xerrors](https://pkg.go.dev/github.com/mdobak/go-xerrors)
 

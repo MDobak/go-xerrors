@@ -5,11 +5,11 @@ import (
 	"strings"
 )
 
-// withWrapper wraps an error with another error.
+// withWrapper wraps one error with another.
 //
-// It is intended to be build error chains, e.g. if we have a
-// following error chain: `err1: err2: err3`, the wrapper is `err1`,
-// and the err is another withWrapper containing `err2` and `err3`.
+// It is intended to build error chains. For example, given an error chain
+// like `err1: err2: err3`, the wrapper is `err1`, and the err is another
+// withWrapper containing `err2` and `err3`.
 type withWrapper struct {
 	wrapper error  // wrapper is the error that wraps the next error in the chain, may be nil
 	err     error  // err is the next error in the chain, must not be nil

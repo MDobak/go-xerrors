@@ -12,12 +12,10 @@ var errWriter io.Writer = os.Stderr
 
 // Print writes a formatted error to stderr.
 //
-// If the error implements the [DetailedError] interface and returns
-// a non-empty string, the returned details are added to each error
-// in the chain.
+// If any error in the chain implements [DetailedError] and returns a non-empty
+// string, its details are appended to the error message.
 //
-// The formatted error can span multiple lines and always ends with
-// a newline.
+// The output may span multiple lines and always ends with a newline.
 func Print(err error) {
 	buf := &strings.Builder{}
 	writeErr(buf, err)
@@ -26,12 +24,10 @@ func Print(err error) {
 
 // Sprint returns a formatted error as a string.
 //
-// If the error implements the [DetailedError] interface and returns
-// a non-empty string, the returned details are added to each error
-// in the chain.
+// If any error in the chain implements [DetailedError] and returns a non-empty
+// string, its details are appended to the error message.
 //
-// The formatted error can span multiple lines and always ends with
-// a newline.
+// The output may span multiple lines and always ends with a newline.
 func Sprint(err error) string {
 	buf := &strings.Builder{}
 	writeErr(buf, err)
@@ -40,12 +36,10 @@ func Sprint(err error) string {
 
 // Fprint writes a formatted error to the provided [io.Writer].
 //
-// If the error implements the [DetailedError] interface and returns
-// a non-empty string, the returned details are added to each error
-// in the chain.
+// If any error in the chain implements [DetailedError] and returns a non-empty
+// string, its details are appended to the error message.
 //
-// The formatted error can span multiple lines and always ends with
-// a newline.
+// The output may span multiple lines and always ends with a newline.
 func Fprint(w io.Writer, err error) (int, error) {
 	buf := &strings.Builder{}
 	writeErr(buf, err)
@@ -78,7 +72,7 @@ func writeErr(buf *strings.Builder, err error) {
 		} else {
 			// If an error does not contain any details, do not print
 			// it, except for the first one. This is to avoid printing
-			// every wrapped error on a single line.
+			// every wrapped error in the chain.
 			if first {
 				buf.WriteString(firstErrorPrefix)
 				buf.WriteString(errMsg)
