@@ -7,13 +7,13 @@ import (
 
 // withWrapper wraps one error with another.
 //
-// It is intended to build error chains. For example, given an error chain
-// like `err1: err2: err3`, the wrapper is `err1`, and the err is another
+// It is used to build error chains. For example, given an error chain
+// like `err1: err2: err3`, the wrapper is `err1`, and err is another
 // withWrapper containing `err2` and `err3`.
 type withWrapper struct {
-	wrapper error  // wrapper is the error that wraps the next error in the chain, may be nil
-	err     error  // err is the next error in the chain, must not be nil
-	msg     string // msg overwrites the error message, if set
+	wrapper error  // wrapper is the error that wraps the next error in the chain; it may be nil
+	err     error  // err is the next error in the chain; it must not be nil
+	msg     string // msg overrides the error message if it is not empty
 }
 
 // Error implements the [error] interface.
@@ -48,21 +48,18 @@ func (e *withWrapper) ErrorDetails() string {
 
 // Unwrap implements the Go 1.13 `Unwrap() error` method, returning
 // the wrapped error.
-//
-// Since withWrapper represents a chain of errors, the Unwrap method
-// returns the next error in the chain, not both the wrapper and the error.
 func (e *withWrapper) Unwrap() error {
 	return e.err
 }
 
 // As implements the Go 1.13 `errors.As` method, allowing type
-// assertions on all errors in the list.
+// assertions on both the wrapper and the wrapped error.
 func (e *withWrapper) As(target any) bool {
 	return errors.As(e.wrapper, target) || errors.As(e.err, target)
 }
 
-// Is implements the Go 1.13 `errors.Is` method, allowing
-// comparisons with all errors in the list.
+// Is implements the Go 1.13 `errors.Is` method, allowing comparisons
+// with both the wrapper and the wrapped error.
 func (e *withWrapper) Is(target error) bool {
 	return errors.Is(e.wrapper, target) || errors.Is(e.err, target)
 }

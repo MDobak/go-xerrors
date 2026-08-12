@@ -60,6 +60,24 @@ func TestAppend(t *testing.T) {
 	}
 }
 
+func TestAppend_DoesNotModifyArgument(t *testing.T) {
+	// Appending to the same error twice must return two independent
+	// errors. The second call must not overwrite the error appended by
+	// the first one.
+	base := Append(nil, Message("a"), Message("b"), Message("c"))
+	first := Append(base, Message("d"))
+	second := Append(base, Message("e"))
+	if got, want := base.Error(), "[a, b, c]"; got != want {
+		t.Errorf("Append(err, errs...): must not modify the error passed as an argument, got: %q, want: %q", got, want)
+	}
+	if got, want := first.Error(), "[a, b, c, d]"; got != want {
+		t.Errorf("Append(err, errs...): got: %q, want: %q", got, want)
+	}
+	if got, want := second.Error(), "[a, b, c, e]"; got != want {
+		t.Errorf("Append(err, errs...): got: %q, want: %q", got, want)
+	}
+}
+
 func TestMultiError_ErrorDetails(t *testing.T) {
 	tests := []struct {
 		errs   []error

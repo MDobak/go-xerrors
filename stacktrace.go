@@ -30,8 +30,9 @@ var DefaultFrameFormatter = func(f Frame, w io.Writer) {
 const stackTraceDepth = 128
 
 // StackTrace extracts the stack trace from the provided error.
-// It traverses the error chain, looking for the last error that
-// has a stack trace.
+// It traverses the error chain and returns the stack trace of the
+// innermost error that has one. It returns nil if no error in the
+// chain has a stack trace.
 func StackTrace(err error) Callers {
 	var callers Callers
 	for err != nil {
@@ -49,7 +50,8 @@ func StackTrace(err error) Callers {
 
 // WithStackTrace wraps the provided error with a stack trace,
 // capturing the stack at the point of the call. The `skip` argument
-// specifies how many stack frames to skip.
+// specifies how many stack frames to skip: 0 starts the stack trace
+// at the caller of WithStackTrace, 1 at its caller, and so on.
 //
 // If err is nil, WithStackTrace returns nil.
 func WithStackTrace(err error, skip int) error {
@@ -108,12 +110,12 @@ func (f Frame) String() string {
 // Format implements the [fmt.Formatter] interface.
 //
 // Supported verbs:
-//   - %s function, file, and line number in a single line
-//   - %f filename
+//   - %s function, file, and line number on a single line
+//   - %f file path
 //   - %d line number
-//   - %n function name, with '+' flag adding the package name
-//   - %v same as %s; '+' or '#' flags print struct details
-//   - %q double-quoted Go string, same as %s
+//   - %n function name; the '+' flag prints the package path as well
+//   - %v same as %s; the '+' and '#' flags print the struct fields
+//   - %q the result of %s as a double-quoted Go string
 func (f Frame) Format(s fmt.State, verb rune) {
 	type _Frame Frame
 	switch verb {
@@ -149,27 +151,28 @@ func (f Frame) writeFrame(w io.Writer) {
 	DefaultFrameFormatter(f, w)
 }
 
-// Callers represents a list of program counters from the
-// [runtime.Callers] function.
+// Callers is a stack trace represented as a list of program counters,
+// as returned by [runtime.Callers].
 type Callers []uintptr
 
 // Frames returns a slice of [Frame] structs with function, file, and
-// line information.
+// line information. It returns nil if the stack trace is empty.
 func (c Callers) Frames() []Frame {
-	r := make([]Frame, len(c))
+	if len(c) == 0 {
+		return nil
+	}
+	r := make([]Frame, 0, len(c))
 	f := runtime.CallersFrames(c)
-	n := 0
 	for {
 		frame, more := f.Next()
-		r[n] = Frame{
+		r = append(r, Frame{
 			File:     frame.File,
 			Line:     frame.Line,
 			Function: frame.Function,
-		}
+		})
 		if !more {
 			break
 		}
-		n++
 	}
 	return r
 }
@@ -184,9 +187,9 @@ func (c Callers) String() string {
 // Format implements the [fmt.Formatter] interface.
 //
 // Supported verbs:
-//   - %s complete stack trace
-//   - %v same as %s; '+' or '#' flags print struct details
-//   - %q double-quoted Go string, same as %s
+//   - %s the complete stack trace, one frame per line
+//   - %v same as %s; the '+' and '#' flags print the raw program counters
+//   - %q the result of %s as a double-quoted Go string
 func (c Callers) Format(s fmt.State, verb rune) {
 	type _Callers Callers
 	switch verb {

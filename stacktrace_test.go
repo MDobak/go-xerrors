@@ -74,6 +74,30 @@ func TestWithStackTraceFormat(t *testing.T) {
 	}
 }
 
+func TestCallers_Empty(t *testing.T) {
+	var empty Callers
+	if got := empty.Frames(); len(got) != 0 {
+		t.Errorf("Callers(nil).Frames(): got: %#v, want: no frames", got)
+	}
+	if got := empty.String(); got != "" {
+		t.Errorf("Callers(nil).String(): got: %q, want: %q", got, "")
+	}
+	if got := StackTrace(io.EOF).Frames(); len(got) != 0 {
+		t.Errorf("StackTrace(io.EOF).Frames(): got: %#v, want: no frames", got)
+	}
+	if got := Sprint(WithStackTrace(io.EOF, 1000)); got != "Error: EOF\n" {
+		t.Errorf("Sprint(WithStackTrace(io.EOF, 1000)): got: %q, want: %q", got, "Error: EOF\n")
+	}
+}
+
+func TestCallers_FramesLength(t *testing.T) {
+	for _, frame := range callers(0).Frames() {
+		if frame.Function == "" {
+			t.Errorf("Callers.Frames(): must not return empty frames")
+		}
+	}
+}
+
 func TestFrameFormat(t *testing.T) {
 	frame := Frame{
 		File:     "file",

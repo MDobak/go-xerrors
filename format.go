@@ -15,7 +15,7 @@ var errWriter io.Writer = os.Stderr
 // If any error in the chain implements [DetailedError] and returns a non-empty
 // string, its details are appended to the error message.
 //
-// The output may span multiple lines and always ends with a newline.
+// If err is nil, nothing is written.
 func Print(err error) {
 	buf := &strings.Builder{}
 	writeErr(buf, err)
@@ -27,26 +27,28 @@ func Print(err error) {
 // If any error in the chain implements [DetailedError] and returns a non-empty
 // string, its details are appended to the error message.
 //
-// The output may span multiple lines and always ends with a newline.
+// The output may span multiple lines and ends with a newline. If err is nil,
+// an empty string is returned.
 func Sprint(err error) string {
 	buf := &strings.Builder{}
 	writeErr(buf, err)
 	return buf.String()
 }
 
-// Fprint writes a formatted error to the provided [io.Writer].
+// Fprint writes a formatted error to the provided [io.Writer]. It returns
+// the number of bytes written and any error encountered while writing.
 //
 // If any error in the chain implements [DetailedError] and returns a non-empty
 // string, its details are appended to the error message.
 //
-// The output may span multiple lines and always ends with a newline.
+// If err is nil, nothing is written.
 func Fprint(w io.Writer, err error) (int, error) {
 	buf := &strings.Builder{}
 	writeErr(buf, err)
 	return w.Write([]byte(buf.String()))
 }
 
-// writeErr writes a formatted error to the provided strings.Builder.
+// writeErr writes a formatted error to the provided [strings.Builder].
 func writeErr(buf *strings.Builder, err error) {
 	const firstErrorPrefix = "Error: "
 	const previousErrorPrefix = "Previous error: "

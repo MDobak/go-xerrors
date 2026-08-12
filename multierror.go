@@ -7,8 +7,10 @@ import (
 )
 
 // Append appends the provided errors to an existing error or list of
-// errors. If `err` is not a [multiError], it will be converted into
-// one. Nil errors are ignored. It does not record a stack trace.
+// errors. If err is not a multi-error, it is converted into one. Nil
+// errors are ignored. It does not record a stack trace.
+//
+// The errors passed as arguments are not modified.
 //
 // If the resulting error list is empty, nil is returned. If the
 // resulting error list contains only one error, that error is
@@ -24,9 +26,15 @@ func Append(err error, errs ...error) error {
 	var me multiError
 	if err != nil {
 		if mErr, ok := err.(multiError); ok {
-			me = mErr
+			// The slice is copied so that appending to the result never
+			// writes into the backing array of the error passed as an
+			// argument. Otherwise, appending twice to the same error would
+			// make the two results overwrite each other.
+			me = make(multiError, len(mErr), len(mErr)+len(errs))
+			copy(me, mErr)
 		} else {
-			me = multiError{err}
+			me = make(multiError, 1, 1+len(errs))
+			me[0] = err
 		}
 	}
 	for _, e := range errs {
@@ -62,14 +70,13 @@ func (e multiError) Error() string {
 	return s.String()
 }
 
-// ErrorDetails returns additional details about the error for
-// the [ErrorDetails] function.
+// ErrorDetails implements the [DetailedError] interface.
 func (e multiError) ErrorDetails() string {
 	if len(e) == 0 {
 		return ""
 	}
 	buf := &strings.Builder{}
-	for n, err := range e.Unwrap() {
+	for n, err := range e {
 		buf.WriteString(strconv.Itoa(n + 1))
 		buf.WriteString(". ")
 		writeErr(buf, err)
@@ -78,7 +85,7 @@ func (e multiError) ErrorDetails() string {
 }
 
 // Unwrap implements the Go 1.20 `Unwrap() []error` method, returning
-// a slice containing all errors in the list.
+// a copy of the slice containing all errors in the list.
 func (e multiError) Unwrap() []error {
 	s := make([]error, len(e))
 	copy(s, e)

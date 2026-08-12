@@ -30,10 +30,10 @@ func Message(msg string) error {
 	return &messageError{msg: msg}
 }
 
-// Messagef creates a simple error with a formatted message,
-// without recording a stack trace. The format string follows the
-// conventions of [fmt.Sprintf]. Each call returns a distinct error
-// instance, even if the message is identical.
+// Messagef creates a simple error with a formatted message, without
+// recording a stack trace. The format string follows the conventions
+// of [fmt.Sprintf]. Each call returns a distinct error instance, even
+// if the message is identical.
 //
 // This function is useful for creating sentinel errors, often
 // referred to as "constant errors."
@@ -46,14 +46,14 @@ func Messagef(format string, args ...any) error {
 
 // New creates a new error from the provided values and records a
 // stack trace at the point of the call. If multiple values are
-// provided, each value is wrapped by the previous one, forming a
+// provided, each value wraps the one that follows it, forming a
 // chain of errors.
 //
 // Usage examples:
 //   - Add a stack trace to an existing error: New(err)
 //   - Create an error with a message and a stack trace: New("access denied")
 //   - Wrap an error with a message: New("access denied", io.EOF)
-//   - Add context to a sentinel error: New(ErrReadError, "access denied")
+//   - Add context to a sentinel error: New(ErrRead, "access denied")
 //
 // Conversion rules for arguments:
 //   - If the value is an error, it is used as is.
@@ -85,7 +85,7 @@ func New(vals ...any) error {
 //
 // Unlike errors created by [fmt.Errorf], the Unwrap method on the
 // returned error yields the next wrapped error, not a slice of errors,
-// since this function is intended for creating linear error chains.
+// because this function is intended for creating linear error chains.
 //
 // To create a sentinel error, use [Message] or [Messagef] instead.
 func Newf(format string, args ...any) error {
@@ -96,7 +96,7 @@ func Newf(format string, args ...any) error {
 }
 
 // Join joins multiple values into a single error, forming a chain
-// of errors.
+// of errors. Each value wraps the one that follows it.
 //
 // Conversion rules for arguments:
 //   - If the value is an error, it is used as is.
@@ -136,7 +136,7 @@ func Join(vals ...any) error {
 //
 // Unlike errors created by [fmt.Errorf], the Unwrap method on the
 // returned error yields the next wrapped error, not a slice of errors,
-// since this function is intended for creating linear error chains.
+// because this function is intended for creating linear error chains.
 //
 // To create a multi-error instead of an error chain, use [Append].
 func Joinf(format string, args ...any) error {
