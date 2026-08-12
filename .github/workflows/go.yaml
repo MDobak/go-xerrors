@@ -10,14 +10,14 @@ jobs:
   CI:
     strategy:
       matrix:
-        go_version: [ "1.18.x", "1.24.x" ]
+        go_version: [ "1.18.x", "1.26.x" ]
 
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v4"
+      - uses: "actions/checkout@v7"
 
       - name: "Set up Go"
-        uses: "actions/setup-go@v5"
+        uses: "actions/setup-go@v7"
         with:
           go-version: ${{ matrix.go_version }}
 
@@ -28,22 +28,43 @@ jobs:
         run: "go test -v ./..."
 
       - name: "Linter"
-        uses: "golangci/golangci-lint-action@v7"
+        uses: "golangci/golangci-lint-action@v9"
         with:
-          version: "v2.0"
+          version: "latest"
+
+  Coverage:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v7"
+
+      - name: "Set up Go"
+        uses: "actions/setup-go@v7"
+        with:
+          go-version: "1.26.x"
+
+      - name: "Run tests with coverage output"
+        run: "go test -race -covermode atomic -coverprofile=covprofile ./..."
+
+      - name: "Install goveralls"
+        run: "go install github.com/mattn/goveralls@latest"
+
+      - name: "Send coverage"
+        env:
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: "goveralls -coverprofile=covprofile -service=github"
 
   Release:
     if: startsWith(github.ref, 'refs/tags/')
     needs: CI
     runs-on: ubuntu-latest
     steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Checkout"
+        uses: "actions/checkout@v7"
+
+      - name: "Create Release"
+        uses: "softprops/action-gh-release@v3"
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
