@@ -1,6 +1,6 @@
 # go-xerrors
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/mdobak/go-xerrors.svg)](https://pkg.go.dev/github.com/mdobak/go-xerrors) [![Go Report Card](https://goreportcard.com/badge/github.com/mdobak/go-xerrors)](https://goreportcard.com/report/github.com/mdobak/go-xerrors) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Coverage Status](https://coveralls.io/repos/github/MDobak/go-xerrors/badge.svg?branch=coverage)](https://coveralls.io/github/MDobak/go-xerrors?branch=coverage)
+[![Go Reference](https://pkg.go.dev/badge/github.com/mdobak/go-xerrors.svg)](https://pkg.go.dev/github.com/mdobak/go-xerrors) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Coverage Status](https://coveralls.io/repos/github/MDobak/go-xerrors/badge.svg?branch=coverage)](https://coveralls.io/github/MDobak/go-xerrors?branch=coverage)
 
 `go-xerrors` is a small, idiomatic library that makes error handling in Go easier. It provides utilities for creating errors with stack traces, wrapping existing errors, aggregating multiple errors, and recovering from panics.
 
